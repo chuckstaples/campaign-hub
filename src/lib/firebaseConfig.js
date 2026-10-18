@@ -1,6 +1,12 @@
-// Paste the Firebase web app config here to turn on syncing between phones.
-// (Firebase console > Project settings > Your apps > Web app > Config.)
+// Firebase web app config for the campaign hub.
 // These values are not secret; they only identify the project.
-// While this is null, the app runs in demo mode: everything stays on one device.
+// Set this to null to run in demo mode (everything stays on one device).
 
-export const firebaseConfig = null;
+export const firebaseConfig = {
+  apiKey: 'AIzaSyB8md-ETamGip_aH8R5O2T2u8c0qBiGUv0',
+  authDomain: 'campaign-hub-3b02b.firebaseapp.com',
+  projectId: 'campaign-hub-3b02b',
+  storageBucket: 'campaign-hub-3b02b.firebasestorage.app',
+  messagingSenderId: '957868166',
+  appId: '1:957868166:web:5a7492ad4cec770a004907',
+};
