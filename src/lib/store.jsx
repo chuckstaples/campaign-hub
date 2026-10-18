@@ -28,6 +28,7 @@ export function HubProvider({ children }) {
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
   const [entriesReady, setEntriesReady] = useState(MODE === 'demo');
   const [error, setError] = useState('');
+  const [secrets, setSecrets] = useState(() => (MODE === 'demo' ? LS.get('hub.demo.secrets', {}) : {}));
 
   useEffect(() => {
     const on = () => setOnline(true), off = () => setOnline(false);
@@ -50,6 +51,8 @@ export function HubProvider({ children }) {
   // Demo: persist edits on this device.
   useEffect(() => { if (MODE === 'demo') LS.set('hub.demo.entries', entries); }, [entries]);
 
+  useEffect(() => { if (MODE === 'demo') LS.set('hub.demo.secrets', secrets); }, [secrets]);
+
   // Firebase: watch the joined campaign.
   useEffect(() => {
     if (!fb || !campaignId) { if (MODE === 'firebase') setCampaign(null); return; }
@@ -66,6 +69,12 @@ export function HubProvider({ children }) {
       setEntries(list); setSync(meta); setEntriesReady(true);
     }, (e) => { console.error(e); setError('Could not load this campaign.'); setEntriesReady(true); });
   }, [fb, campaignId, authReady, campaign, isOwner]);
+
+  // Firebase: the DM also gets their private data.
+  useEffect(() => {
+    if (MODE !== 'firebase' || !fb || !campaignId || !isOwner || !campaign) { if (MODE === 'firebase') setSecrets({}); return; }
+    return fb.watchSecrets(campaignId, setSecrets);
+  }, [fb, campaignId, isOwner, campaign]);
 
   const join = useCallback(async (code) => {
     if (!fb) return 'Still starting up. Try again in a second.';
@@ -93,8 +102,28 @@ export function HubProvider({ children }) {
   }, [fb, campaignId]);
 
   const deleteEntry = useCallback((id) => {
-    if (MODE === 'demo') setEntries((list) => list.filter((e) => e.id !== id));
-    else fb?.deleteEntry(campaignId, id);
+    if (MODE === 'demo') {
+      setEntries((list) => list.filter((e) => e.id !== id));
+      setSecrets((m) => { const n = { ...m }; delete n[id]; return n; });
+    } else fb?.deleteEntry(campaignId, id);
+  }, [fb, campaignId]);
+
+  const saveSecret = useCallback((id, data) => {
+    if (MODE === 'demo') setSecrets((m) => ({ ...m, [id]: data }));
+    else fb?.saveSecret(campaignId, id, data);
+  }, [fb, campaignId]);
+
+  const deleteSecret = useCallback((id) => {
+    if (MODE === 'demo') setSecrets((m) => { const n = { ...m }; delete n[id]; return n; });
+    else fb?.deleteSecret(campaignId, id);
+  }, [fb, campaignId]);
+
+  // World entries: revealed facts live on the entry, hidden ones in the DM-only secret.
+  const saveWithSecret = useCallback((entry, secret) => {
+    if (MODE === 'demo') {
+      setEntries((list) => (list.some((e) => e.id === entry.id) ? list.map((e) => (e.id === entry.id ? entry : e)) : [...list, entry]));
+      setSecrets((m) => ({ ...m, [entry.id]: secret }));
+    } else fb?.saveWithSecret(campaignId, entry, secret);
   }, [fb, campaignId]);
 
   const resetDemo = useCallback(() => { if (MODE === 'demo') setEntries(demoSeed()); }, []);
@@ -107,7 +136,8 @@ export function HubProvider({ children }) {
       entries: sorted,
       visibleEntries: sorted.filter((e) => e.visible),
       online, pending: sync.pending, fromCache: sync.fromCache,
-      join, leave, openCampaign, saveEntry, setVisible, deleteEntry, resetDemo,
+      secrets,
+      join, leave, openCampaign, saveEntry, setVisible, deleteEntry, resetDemo, saveSecret, deleteSecret, saveWithSecret,
       signIn: () => fb?.signIn(), signOut: () => fb?.signOut(),
       myCampaigns: () => (fb && user ? fb.myCampaigns(user.uid) : Promise.resolve([])),
       createCampaign: (name) => fb.createCampaign(name, user.uid),
@@ -116,7 +146,7 @@ export function HubProvider({ children }) {
         if (cid === campaignId) { LS.del('hub.campaignId'); setCampaignId(null); setEntries([]); }
       },
     };
-  }, [entries, authReady, fb, entriesReady, error, user, isOwner, campaign, campaignId, online, sync, join, leave, openCampaign, saveEntry, setVisible, deleteEntry, resetDemo]);
+  }, [entries, authReady, fb, entriesReady, error, user, isOwner, campaign, campaignId, online, sync, secrets, join, leave, openCampaign, saveEntry, setVisible, deleteEntry, resetDemo, saveSecret, deleteSecret, saveWithSecret]);
 
   return <HubContext.Provider value={value}>{children}</HubContext.Provider>;
 }

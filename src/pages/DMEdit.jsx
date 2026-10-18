@@ -5,6 +5,8 @@ import { BackLink, ConfirmButton, Icon, ImagePicker, Picture, Switch } from '../
 import { ABILITIES, SKILL_NAMES } from '../lib/rules.js';
 import { newId } from '../lib/seed.js';
 import { KINDS } from './Options.jsx';
+import WorldEdit from './WorldEdit.jsx';
+import { isWorldKind } from '../lib/world.js';
 
 const BLANK = {
   race: { size: 'Medium', speed: '30 ft', senses: '', abilities: [], skills: [] },
@@ -27,7 +29,7 @@ function Toggles({ options, value, onChange, max }) {
 
 const Field = ({ label, children, hint }) => <label className="field"><span>{label}</span>{children}{hint && <span className="small" style={{ fontWeight: 400 }}>{hint}</span>}</label>;
 
-export default function DMEdit() {
+function OptionEdit() {
   const { id, kind: newKind } = useParams();
   const { entries, saveEntry, deleteEntry, isOwner } = useHub();
   const nav = useNavigate();
@@ -131,4 +133,11 @@ export default function DMEdit() {
       </div>
     </div>
   );
+}
+
+export default function DMEdit() {
+  const { id, kind } = useParams();
+  const { entries } = useHub();
+  const k = entries.find((e) => e.id === id)?.kind || kind;
+  return isWorldKind(k) ? <WorldEdit key={id || kind} /> : <OptionEdit key={id || kind} />;
 }

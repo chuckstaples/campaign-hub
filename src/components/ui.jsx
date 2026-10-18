@@ -35,7 +35,7 @@ export function Nav() {
       <NavLink to="/options"><Icon name="book" size={24} /><span>Options</span></NavLink>
       <NavLink to="/character"><Icon name="person" size={24} /><span>Character</span></NavLink>
       <NavLink to="/rolls"><Icon name="d20" size={24} /><span>Rolls</span></NavLink>
-      <button type="button" disabled style={{ opacity: 0.55 }}><Icon name="map" size={24} /><span>World · soon</span></button>
+      <NavLink to="/world"><Icon name="map" size={24} /><span>World</span></NavLink>
     </nav>
   );
 }
@@ -84,11 +84,11 @@ export function HelpButton({ open, onClick, label }) {
 }
 
 // A button that asks for a second tap instead of a pop-up.
-export function ConfirmButton({ children, confirmText = 'Tap again to confirm', onConfirm, className = 'btn ghost small', style }) {
+export function ConfirmButton({ children, confirmText = 'Tap again to confirm', onConfirm, className = 'btn ghost small', style, label }) {
   const [armed, setArmed] = useState(false);
   useEffect(() => { if (!armed) return; const t = setTimeout(() => setArmed(false), 4000); return () => clearTimeout(t); }, [armed]);
   return (
-    <button type="button" className={className} style={{ ...style, ...(armed ? { borderColor: 'var(--warn)', color: 'var(--warn)' } : null) }}
+    <button type="button" className={className} aria-label={armed ? undefined : label} style={{ ...style, ...(armed ? { borderColor: 'var(--warn)', color: 'var(--warn)' } : null) }}
       onClick={() => { if (armed) { setArmed(false); onConfirm(); } else setArmed(true); }}>
       <span aria-live="polite">{armed ? confirmText : children}</span>
     </button>

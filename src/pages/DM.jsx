@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { useHub } from '../lib/store.jsx';
 import { BackLink, ConfirmButton, Icon, Ornament, Switch, SyncStatus } from '../components/ui.jsx';
 import { KINDS } from './Options.jsx';
+import { WORLD_KINDS, allFacts } from '../lib/world.js';
 
 export default function DM() {
   const hub = useHub();
@@ -78,17 +79,32 @@ function PickCampaign() {
 }
 
 function Manage() {
-  const { entries, campaign, setVisible, mode, signOut, user, deleteCampaign } = useHub();
+  const { entries, secrets, campaign, setVisible, mode, signOut, user, deleteCampaign } = useHub();
   const [delErr, setDelErr] = useState('');
   const nav = useNavigate();
+  const remember = (k, v) => { try { sessionStorage.setItem(k, v); } catch { /* ignore */ } };
+  const [section, setSection] = useState(() => sessionStorage.getItem('hub.dmsection') || 'options');
   const [kind, setKind] = useState(() => sessionStorage.getItem('hub.dmtab') || 'race');
   const [q, setQ] = useState('');
   const [copied, setCopied] = useState(false);
-  const pickKind = (k) => { setKind(k); try { sessionStorage.setItem('hub.dmtab', k); } catch { /* ignore */ } };
-  const all = entries.filter((e) => e.kind === kind);
+  const isWorld = section === 'world';
+  const kinds = isWorld ? WORLD_KINDS : KINDS;
+  const curKind = kinds.some((k) => k.id === kind) ? kind : kinds[0].id;
+  const pickKind = (k) => { setKind(k); remember('hub.dmtab', k); };
+  const pickSection = (sct) => {
+    if (sct === 'combat') { nav('/dm/combat'); return; }
+    setSection(sct); remember('hub.dmsection', sct);
+    const first = (sct === 'world' ? WORLD_KINDS : KINDS)[0].id; setKind(first); remember('hub.dmtab', first); setQ('');
+  };
+  const all = entries.filter((e) => e.kind === curKind);
   const list = all.filter((e) => !q.trim() || e.name.toLowerCase().includes(q.trim().toLowerCase()));
   const shown = all.filter((e) => e.visible).length;
-  const one = KINDS.find((k) => k.id === kind).one;
+  const one = kinds.find((k) => k.id === curKind).one;
+  const factLine = (e) => {
+    const facts = allFacts(e, secrets[e.id]);
+    if (!facts.length) return e.summary || 'No connections or notes yet';
+    return `${facts.filter((f) => f.revealed).length} of ${facts.length} things revealed`;
+  };
 
   const share = async () => {
     const url = `${location.origin}${location.pathname}#/join`;
@@ -114,32 +130,42 @@ function Manage() {
           </div>
         )}
         {mode === 'demo' && <p className="banner" style={{ margin: 0 }}>Demo mode: anyone on this device can edit. Connecting Firebase adds your sign-in and a join code for players.</p>}
-        <div className="seg">{KINDS.map((k) => <button key={k.id} type="button" aria-pressed={kind === k.id} onClick={() => pickKind(k.id)}>{k.label}</button>)}</div>
+        <div className="seg" aria-label="Section">
+          <button type="button" aria-pressed={section === 'options'} onClick={() => pickSection('options')}>Options</button>
+          <button type="button" aria-pressed={isWorld} onClick={() => pickSection('world')}>World</button>
+          <button type="button" aria-pressed={false} onClick={() => pickSection('combat')}>Combat</button>
+        </div>
+        <div className="wrap" style={{ gap: 8 }}>{kinds.map((k) => <button key={k.id} type="button" className="chip" aria-pressed={curKind === k.id} onClick={() => pickKind(k.id)}>{k.label}</button>)}</div>
         <div className="between">
           <span className="small">Players can see <b style={{ color: 'var(--ink)' }}>{shown}</b> of {all.length}</span>
-          <button type="button" className="btn small" onClick={() => nav(`/dm/new/${kind}`)}><Icon name="plus" size={16} />New {one}</button>
+          <button type="button" className="btn small" onClick={() => nav(`/dm/new/${curKind}`)}><Icon name="plus" size={16} />New {one}</button>
         </div>
         <label className="search">
           <Icon name="search" size={18} style={{ color: 'var(--muted)' }} />
           <span className="sr">Search</span>
-          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${KINDS.find((k) => k.id === kind).label.toLowerCase()}`} />
+          <input type="search" value={q} onChange={(e) => setQ(e.target.value)} placeholder={`Search ${kinds.find((k) => k.id === curKind).label.toLowerCase()}`} />
         </label>
-        <div className="row" style={{ gap: 8 }}>
-          <button type="button" className="btn ghost small" style={{ flex: 1 }} onClick={() => setVisible(list.map((e) => e.id), true)}>Show all{q ? ' found' : ''}</button>
-          <button type="button" className="btn ghost small" style={{ flex: 1 }} onClick={() => setVisible(list.map((e) => e.id), false)}>Hide all{q ? ' found' : ''}</button>
-        </div>
+        {!isWorld && (
+          <div className="row" style={{ gap: 8 }}>
+            <button type="button" className="btn ghost small" style={{ flex: 1 }} onClick={() => setVisible(list.map((e) => e.id), true)}>Show all{q ? ' found' : ''}</button>
+            <button type="button" className="btn ghost small" style={{ flex: 1 }} onClick={() => setVisible(list.map((e) => e.id), false)}>Hide all{q ? ' found' : ''}</button>
+          </div>
+        )}
+        {isWorld && <p className="small">Tap an entry to reveal its connections and notes one at a time.</p>}
       </header>
       <div className="page" style={{ paddingTop: '0.25rem', gap: '0.5rem' }}>
         {list.map((e) => (
-          <div key={e.id} className={`list-row${e.source === 'Homebrew' ? ' draft' : ''}`}>
-            <button type="button" className="grow stack" style={{ gap: 2, minHeight: 44, border: 'none', background: 'none', padding: 0, textAlign: 'left', justifyContent: 'center' }} aria-label={`Edit ${e.name}`} onClick={() => nav(`/dm/edit/${e.id}`)}>
+          <div key={e.id} className={`list-row${e.source === 'Homebrew' && !isWorld ? ' draft' : ''}`}>
+            <button type="button" className="grow stack" style={{ gap: 2, minHeight: 44, border: 'none', background: 'none', padding: 0, textAlign: 'left', justifyContent: 'center' }} aria-label={isWorld ? `Open ${e.name}` : `Edit ${e.name}`} onClick={() => nav(isWorld ? `/world/${e.id}` : `/dm/edit/${e.id}`)}>
               <span className="card-title" style={{ fontSize: '1.2rem' }}>{e.name}</span>
-              <span className="small" style={{ fontSize: '0.72rem', color: e.source === 'Homebrew' ? 'var(--warn)' : 'var(--muted)' }}>{e.source || 'Official'} · tap to edit</span>
+              {isWorld
+                ? <span className="small" style={{ fontSize: '0.72rem' }}>{factLine(e)}</span>
+                : <span className="small" style={{ fontSize: '0.72rem', color: e.source === 'Homebrew' ? 'var(--warn)' : 'var(--muted)' }}>{e.source || 'Official'} · tap to edit</span>}
             </button>
             <Switch on={!!e.visible} onChange={(v) => setVisible([e.id], v)} label={`Visible to players: ${e.name}`} />
           </div>
         ))}
-        {list.length === 0 && <p className="lede" style={{ textAlign: 'center', padding: '1.5rem 0' }}>Nothing here yet.</p>}
+        {list.length === 0 && <p className="lede" style={{ textAlign: 'center', padding: '1.5rem 0' }}>Nothing here yet.{isWorld ? ` Tap New ${one} to add one.` : ''}</p>}
         <Ornament />
         {mode === 'firebase' && campaign && (
           <div className="card dashed" style={{ alignItems: 'center', textAlign: 'center' }}>

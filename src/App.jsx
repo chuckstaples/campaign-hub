@@ -8,6 +8,9 @@ import Rolls from './pages/Rolls.jsx';
 import Settings from './pages/Settings.jsx';
 import DM from './pages/DM.jsx';
 import DMEdit from './pages/DMEdit.jsx';
+import World from './pages/World.jsx';
+import WorldDetail from './pages/WorldDetail.jsx';
+import Combat from './pages/Combat.jsx';
 
 function NeedsCampaign({ children }) {
   const { mode, campaignId, ready } = useHub();
@@ -27,7 +30,10 @@ export default function App() {
         <Route path="/entry/:id" element={<NeedsCampaign><EntryDetail /></NeedsCampaign>} />
         <Route path="/character" element={<NeedsCampaign><Character /></NeedsCampaign>} />
         <Route path="/rolls" element={<NeedsCampaign><Rolls /></NeedsCampaign>} />
+        <Route path="/world" element={<NeedsCampaign><World /></NeedsCampaign>} />
+        <Route path="/world/:id" element={<NeedsCampaign><WorldDetail /></NeedsCampaign>} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/dm/combat" element={<Combat />} />
         <Route path="/dm" element={<DM />} />
         <Route path="/dm/edit/:id" element={<DMEdit />} />
         <Route path="/dm/new/:kind" element={<DMEdit />} />

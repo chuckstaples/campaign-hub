@@ -117,4 +117,72 @@ describe('Campaign Hub (demo mode)', () => {
     await screen.findByRole('heading', { name: 'Your content' });
     expect(screen.queryByText('Orc')).toBeNull();
   });
+
+  it('shows the World tab with revealed entries and lets the DM reveal facts one at a time', async () => {
+    go('#/world');
+    expect(await screen.findByRole('heading', { name: 'The World' })).toBeTruthy();
+    click(screen.getByText('Marta Thistledown'));
+    expect(await screen.findByText('Things to discover')).toBeTruthy();
+    const fact = screen.getByRole('switch', { name: /Reveal: Runs the inn in/ });
+    expect(fact.getAttribute('aria-checked')).toBe('true');
+    expect(screen.getByRole('link', { name: 'Briarford' })).toBeTruthy();
+    click(fact);
+    expect(screen.getByRole('switch', { name: /Reveal: Runs the inn in/ }).getAttribute('aria-checked')).toBe('false');
+    const stored = JSON.parse(localStorage.getItem('hub.demo.secrets'));
+    expect(stored['npc-demo-marta'].facts[0].text).toBe('Runs the inn in');
+    const entries = JSON.parse(localStorage.getItem('hub.demo.entries'));
+    expect(entries.find((e) => e.id === 'npc-demo-marta').facts).toHaveLength(0);
+  });
+
+  it('lets the DM add a lore entry with a hidden note', async () => {
+    localStorage.removeItem('hub.demo.seedVersion');
+    go('#/dm');
+    click(await screen.findByRole('button', { name: 'World' }));
+    click(btn('Lore'));
+    expect(screen.getByText('The Drowned Bell')).toBeTruthy();
+    click(btn(/New lore entry/));
+    fireEvent.change(await screen.findByPlaceholderText(/A local legend/), { target: { value: 'An old tale' } });
+    const nameInput = screen.getAllByRole('textbox')[0];
+    fireEvent.change(nameInput, { target: { value: 'The Sunken Crown' } });
+    click(btn('Note'));
+    fireEvent.change(screen.getByPlaceholderText('Something the party can learn'), { target: { value: 'The crown is cursed.' } });
+    fireEvent.change(screen.getByPlaceholderText(/Secrets, plans/), { target: { value: 'Ties to the lich.' } });
+    click(btn('Save'));
+    expect(await screen.findByRole('heading', { name: 'The Sunken Crown' })).toBeTruthy();
+    expect(screen.getByText('The crown is cursed.')).toBeTruthy();
+    expect(screen.getByText('Ties to the lich.')).toBeTruthy();
+    const entries = JSON.parse(localStorage.getItem('hub.demo.entries'));
+    const crown = entries.find((e) => e.name === 'The Sunken Crown');
+    expect(crown.facts).toHaveLength(0);
+    expect(JSON.stringify(crown)).not.toContain('cursed');
+  });
+
+  it('runs a fight in the combat tracker', async () => {
+    go('#/dm/combat');
+    expect(await screen.findByRole('heading', { name: 'Combat' })).toBeTruthy();
+    fireEvent.change(screen.getByPlaceholderText('Character name'), { target: { value: 'Pip' } });
+    fireEvent.change(screen.getByLabelText('Initiative'), { target: { value: '15' } });
+    click(btn('Add player'));
+    click(btn('Monster'));
+    fireEvent.change(screen.getByPlaceholderText('e.g. Goblin'), { target: { value: 'Goblin' } });
+    fireEvent.change(screen.getByLabelText('HP'), { target: { value: '7' } });
+    fireEvent.change(screen.getByLabelText('How many'), { target: { value: '2' } });
+    fireEvent.change(screen.getByLabelText('Or set initiative'), { target: { value: '10' } });
+    click(btn('Add monster'));
+    expect(screen.getByText('Goblin 1')).toBeTruthy();
+    expect(screen.getByText('Goblin 2')).toBeTruthy();
+    click(btn('Start the fight'));
+    expect(screen.getByText(/Now:/).textContent).toContain('Pip');
+    click(btn('Next turn'));
+    expect(screen.getByText(/Now:/).textContent).toContain('Goblin 1');
+    click(screen.getAllByText('Goblin 1').find((n) => n.closest('.card')).closest('button'));
+    fireEvent.change(screen.getByPlaceholderText('Amount'), { target: { value: '9' } });
+    click(btn('Damage'));
+    expect(screen.getByText('Down')).toBeTruthy();
+    click(btn('Next turn'));
+    expect(screen.getByText(/Now:/).textContent).toContain('Goblin 2');
+    click(btn('Next turn'));
+    expect(screen.getByText(/Now:/).textContent).toContain('Pip');
+    expect(screen.getByText('Round 2')).toBeTruthy();
+  });
 });

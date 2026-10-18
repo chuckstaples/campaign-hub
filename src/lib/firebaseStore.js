@@ -75,6 +75,12 @@ export function createFirebaseStore(config) {
         entries.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
         await batch.commit();
       }
+      const secrets = await getDocs(collection(db, 'campaigns', cid, 'secrets'));
+      for (let i = 0; i < secrets.docs.length; i += 400) {
+        const batch = writeBatch(db);
+        secrets.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
       const code = camp.data().code;
       if (code) await deleteDoc(doc(db, 'codes', code));
       await deleteDoc(doc(db, 'campaigns', cid));
@@ -99,7 +105,30 @@ export function createFirebaseStore(config) {
       batch.commit().catch(console.error);
     },
     deleteEntry(cid, id) {
-      deleteDoc(doc(db, 'campaigns', cid, 'entries', id)).catch(console.error);
+      const batch = writeBatch(db);
+      batch.delete(doc(db, 'campaigns', cid, 'entries', id));
+      batch.delete(doc(db, 'campaigns', cid, 'secrets', id));
+      batch.commit().catch(console.error);
+    },
+
+    // DM-only data (hidden facts, private notes, saved monsters). Players can't read it.
+    watchSecrets(cid, cb) {
+      return onSnapshot(collection(db, 'campaigns', cid, 'secrets'), (snap) => {
+        cb(Object.fromEntries(snap.docs.map((d) => [d.id, d.data()])));
+      }, (e) => console.error(e));
+    },
+    saveSecret(cid, id, data) {
+      setDoc(doc(db, 'campaigns', cid, 'secrets', id), { ...clean(data), updatedAt: serverTimestamp() }).catch(console.error);
+    },
+    deleteSecret(cid, id) {
+      deleteDoc(doc(db, 'campaigns', cid, 'secrets', id)).catch(console.error);
+    },
+    // Save an entry and its secret part together, so they never get out of step.
+    saveWithSecret(cid, entry, secret) {
+      const batch = writeBatch(db);
+      batch.set(doc(db, 'campaigns', cid, 'entries', entry.id), { ...clean(entry), updatedAt: serverTimestamp() });
+      batch.set(doc(db, 'campaigns', cid, 'secrets', entry.id), { ...clean(secret), updatedAt: serverTimestamp() });
+      batch.commit().catch(console.error);
     },
   };
 }

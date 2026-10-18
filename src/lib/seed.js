@@ -498,7 +498,7 @@ const base = (kind, e) => ({
 });
 
 // Bump when the starting content changes so demo devices pick it up.
-export const SEED_VERSION = 2;
+export const SEED_VERSION = 3;
 
 export function seedEntries() {
   return [
@@ -508,9 +508,20 @@ export function seedEntries() {
   ];
 }
 
+// A few sample world entries for demo mode only (real campaigns start empty).
+const DEMO_WORLD = [
+  { id: 'npc-demo-marta', kind: 'npc', name: 'Marta Thistledown', summary: 'Innkeeper of the Gilded Goose', visible: true, source: 'Homebrew', image: '',
+    description: 'A cheerful halfling who knows every rumor in town and never forgets a debt.',
+    facts: [{ id: 'f1', type: 'connection', text: 'Runs the inn in', linkId: 'place-demo-briarford', order: 0 }] },
+  { id: 'place-demo-briarford', kind: 'place', name: 'Briarford', summary: 'A sleepy river town on the Sword Coast', visible: true, source: 'Homebrew', image: '',
+    description: 'Mossy stone bridges, a busy market every tenth day, and more cats than people.', facts: [] },
+  { id: 'lore-demo-drowned-bell', kind: 'lore', name: 'The Drowned Bell', summary: 'A local legend', visible: false, source: 'Homebrew', image: '',
+    description: 'Fishers say a temple bell rings under the river on moonless nights.', facts: [] },
+];
+
 export function demoSeed() {
   // In demo mode everything starts visible so players can try it.
-  return seedEntries().map((e) => ({ ...e, visible: true }));
+  return [...seedEntries().map((e) => ({ ...e, visible: true })), ...DEMO_WORLD];
 }
 
 export const newId = (kind) => `${kind}-${Date.now().toString(36)}${Math.random().toString(36).slice(2, 6)}`;
