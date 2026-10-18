@@ -99,6 +99,11 @@ export default function DMEdit() {
           </Field>
         </>}
 
+        {e.kind === 'class' && <Field label="Armor"><input className="input" value={e.armor || ''} onChange={(x) => up({ armor: x.target.value })} /></Field>}
+        {e.kind !== 'race' && <Field label="Tools"><input className="input" value={e.tools || ''} onChange={(x) => up({ tools: x.target.value })} /></Field>}
+        {e.kind === 'background' && <Field label="Languages"><input className="input" value={e.languages || ''} onChange={(x) => up({ languages: x.target.value })} /></Field>}
+        {e.kind !== 'race' && <Field label="Starting gear"><textarea className="input" value={e.equipment || ''} onChange={(x) => up({ equipment: x.target.value })} /></Field>}
+
         <div className="stack">
           <span className="label">{e.kind === 'class' ? 'Level 1 features' : e.kind === 'background' ? 'Feature' : 'Traits'}</span>
           {e.traits.map((t, i) => (

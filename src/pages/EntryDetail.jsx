@@ -63,6 +63,15 @@ export default function EntryDetail() {
           </div>
         )}
 
+        {(e.armor || e.tools || e.languages || e.equipment) && (
+          <div className="card" style={{ gap: '0.6rem' }}>
+            {e.armor && <div className="stack" style={{ gap: 2 }}><span className="label">Armor</span><span style={{ fontSize: '0.9rem' }}>{e.armor}</span></div>}
+            {e.tools && <div className="stack" style={{ gap: 2 }}><span className="label">Tools</span><span style={{ fontSize: '0.9rem' }}>{e.tools}</span></div>}
+            {e.languages && <div className="stack" style={{ gap: 2 }}><span className="label">Languages</span><span style={{ fontSize: '0.9rem' }}>{e.languages}</span></div>}
+            {e.equipment && <div className="stack" style={{ gap: 2 }}><span className="label">Starting gear</span><span style={{ fontSize: '0.9rem', lineHeight: 1.5 }}>{e.equipment}</span></div>}
+          </div>
+        )}
+
         {(e.traits || []).length > 0 && (
           <div className="stack" style={{ gap: '0.75rem' }}>
             <h2 className="h2">{e.kind === 'class' ? 'At level 1' : e.kind === 'background' ? 'Feature' : 'Traits'}</h2>

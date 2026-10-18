@@ -243,7 +243,7 @@ function StepWeapons({ c, d, update }) {
         <span className="grow stack" style={{ gap: 2 }}>
           <span style={{ fontWeight: 600 }}>{w.name}</span>
           <span className="pick-meta">Damage {w.die} {w.type}{w.versatile ? ` (${w.versatile} with two hands)` : ''}</span>
-          <span className="pick-meta">Uses {weaponUses(w)}{w.finesse ? `, whichever is higher (${ab} ${sign(d.mods[ab])})` : ` (${sign(d.mods[ab])})`}{w.ranged ? ` · range ${w.ranged}` : w.thrown ? ` · can throw ${w.thrown}` : ''}</span>
+          <span className="pick-meta">Uses {weaponUses(w)}{w.finesse && !w.ranged ? `, whichever is higher (${ab} ${sign(d.mods[ab])})` : ` (${sign(d.mods[ab])})`}{w.ranged ? ` · range ${w.ranged}` : w.thrown ? ` · can throw ${w.thrown}` : ''}</span>
         </span>
         {c.weapons.includes(w.name) && <Icon name="check" size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
       </button>
@@ -281,6 +281,14 @@ function StepReview({ c, d }) {
         <div className="wrap">{(d.cls?.saves || []).map((s) => <span key={s} className="tag">{s}</span>)}</div>
         {c.weapons.length > 0 && <><span className="label" style={{ marginTop: 6 }}>Weapons</span><div className="wrap">{c.weapons.map((w) => <span key={w} className="tag">{w}</span>)}</div></>}
       </div>
+      {(d.cls?.equipment || d.bg?.equipment) && (
+        <div className="card">
+          <span className="label">Starting gear</span>
+          {d.cls?.equipment && <p className="small" style={{ color: 'var(--ink)' }}><b>{d.cls.name}:</b> {d.cls.equipment}</p>}
+          {d.bg?.equipment && <p className="small" style={{ color: 'var(--ink)' }}><b>{d.bg.name}:</b> {d.bg.equipment}</p>}
+          <p className="small">Where it says &ldquo;or,&rdquo; pick one with your DM.</p>
+        </div>
+      )}
       <p className="small">Copy these onto your paper sheet. After you save, the Rolls tab shows what to roll for everything.</p>
     </>
   );

@@ -252,85 +252,244 @@ const RACES = [
   },
 ];
 
-const BG = (name, summary, skills, abilities, traits = []) => ({ name, summary, skills, abilities, traits });
+// Backgrounds and classes from the DM's document (version 1.1). Text shortened for phones.
+const BG = (name, summary, skills, abilities, more = {}) => ({ name, summary, skills, abilities, traits: [], ...more });
 const BACKGROUNDS = [
-  BG('Acolyte', 'You served a temple and know its rites.', ['Insight', 'Religion'], ['INT', 'WIS', 'CHA'],
-    [T('Shelter of the Faithful', 'Temples of your faith give you and your party free healing and care, and fellow believers will support you.')]),
-  BG('Anthropologist', 'You study cultures, customs and peoples.', ['Insight', 'Religion'], ['INT', 'WIS', 'CHA']),
-  BG('Archaeologist', 'You dig up lost places and old secrets.', ['History', 'Survival'], ['CON', 'INT', 'WIS']),
-  BG('Athlete', 'You trained your body to compete.', ['Acrobatics', 'Athletics'], ['STR', 'DEX', 'CON']),
-  BG('Charlatan', 'You get by on lies and tricks.', ['Deception', 'Sleight of Hand'], ['DEX', 'CON', 'CHA']),
-  BG('City Watch', 'You kept the peace on city streets.', ['Athletics', 'Insight'], ['STR', 'INT', 'WIS']),
-  BG('Criminal', 'You lived on the wrong side of the law.', ['Deception', 'Stealth'], ['DEX', 'CON', 'INT']),
-  BG('Entertainer', 'You live for the crowd and the stage.', ['Acrobatics', 'Performance'], ['STR', 'DEX', 'CHA']),
-  BG('Far Traveler', 'You come from somewhere very far away.', ['Insight', 'Perception'], ['DEX', 'WIS', 'CHA']),
-  BG('Feylost', 'You grew up lost in the Feywild.', ['Deception', 'Survival'], ['DEX', 'WIS', 'CHA']),
-  BG('Fisher', 'You worked the water and know its stories.', ['History', 'Survival'], ['STR', 'DEX', 'WIS']),
-  BG('Folk Hero', 'Ordinary folk see you as their champion.', ['Animal Handling', 'Survival'], ['STR', 'CON', 'WIS']),
-  BG('Giant Foundling', 'You were raised by giants.', ['Intimidation', 'Survival'], ['STR', 'CON', 'WIS']),
-  BG('Guild Artisan', 'You learned a trade in a guild, or traded goods as a merchant.', ['Insight', 'Persuasion'], ['DEX', 'INT', 'CHA']),
-  BG('Haunted One', 'Something dark follows you.', ['Investigation', 'Religion'], ['CON', 'WIS', 'CHA']),
-  BG('Hermit', 'You lived alone, far from others.', ['Medicine', 'Religion'], ['CON', 'WIS', 'CHA']),
-  BG('Knight', 'You hold a title and an oath.', ['History', 'Persuasion'], ['STR', 'INT', 'CHA']),
-  BG('Mercenary', 'You fought for coin.', ['Athletics', 'Persuasion'], ['STR', 'DEX', 'CON']),
-  BG('Noble', 'You were born to wealth and status.', ['History', 'Persuasion'], ['STR', 'INT', 'CHA']),
-  BG('Outlander', 'You grew up in the wilds.', ['Athletics', 'Survival'], ['STR', 'CON', 'WIS']),
-  BG('Sailor', 'You crewed a ship, or sailed as a pirate.', ['Athletics', 'Perception'], ['STR', 'DEX', 'WIS']),
-  BG('Sage', 'You spent years learning from books.', ['Arcana', 'History'], ['CON', 'INT', 'WIS']),
-  BG('Smuggler', 'You moved goods past the law.', ['Athletics', 'Deception'], ['STR', 'DEX', 'CHA']),
-  BG('Soldier', 'You served in an army.', ['Athletics', 'Intimidation'], ['STR', 'DEX', 'CON']),
-  BG('Urchin', 'You grew up poor on the streets.', ['Sleight of Hand', 'Stealth'], ['DEX', 'WIS', 'CHA']),
+  BG('Acolyte', 'You served a temple and know its rites.', ['Insight', 'Religion'], ['INT', 'WIS', 'CHA'], {
+    tools: 'None', languages: 'Two of your choice',
+    equipment: 'A holy symbol, a prayer book or prayer wheel, 5 sticks of incense, vestments, common clothes, 15 gp',
+    traits: [T('Shelter of the Faithful', 'Temples of your faith give you and your party free healing and care. Believers will support you at a modest lifestyle, and you may have a home temple whose priests will help you.')] }),
+  BG('Anthropologist', 'You study cultures, customs and peoples, from books and firsthand.', ['Insight', 'Religion'], ['INT', 'WIS', 'CHA'], {
+    tools: 'None', languages: 'Two of your choice',
+    equipment: 'A leather-bound diary, ink and pen, traveler’s clothes, a meaningful trinket, 10 gp',
+    traits: [
+      T('Cultural Chameleon', 'You lived among another people until they treated you as one of their own. Pick the race whose culture you adopted.'),
+      T('Adept Linguist', 'After watching people talk for a day, you can communicate with them at a basic level, even without a shared language.'),
+    ] }),
+  BG('Archaeologist', 'You dig up lost places to learn the stories of the past.', ['History', 'Survival'], ['CON', 'INT', 'WIS'], {
+    tools: 'Cartographer’s tools or navigator’s tools', languages: 'One of your choice',
+    equipment: 'A map to a ruin or dungeon, a bullseye lantern, a miner’s pick, traveler’s clothes, a shovel, a two-person tent, a trinket from a dig site, 25 gp',
+    traits: [T('Historical Knowledge', 'In a ruin or dungeon, you can tell what it was for and who built it. You can also value art objects over a century old.')] }),
+  BG('Athlete', 'You live for competition and the roar of the crowd.', ['Acrobatics', 'Athletics'], ['STR', 'DEX', 'CON'], {
+    tools: 'Vehicles (land)', languages: 'One of your choice',
+    equipment: 'A bronze discus or leather ball, a lucky charm or trophy, traveler’s clothes, 10 gp',
+    traits: [T('Echoes of Victory', 'Within 100 miles of where you grew up, there’s a 50% chance a town has a fan who will give you information and a place to stay.')] }),
+  BG('Charlatan', 'You read people easily and use it to your advantage.', ['Deception', 'Sleight of Hand'], ['DEX', 'CON', 'CHA'], {
+    tools: 'Disguise kit, forgery kit', languages: 'None',
+    equipment: 'Fine clothes, a disguise kit, 15 gp',
+    traits: [T('False Identity', 'You have a second identity with papers, contacts and disguises. You can forge documents and handwriting you’ve seen.')] }),
+  BG('City Watch', 'You kept your hometown safe from lawbreakers.', ['Athletics', 'Insight'], ['STR', 'INT', 'WIS'], {
+    tools: 'None', languages: 'Two of your choice',
+    equipment: 'A uniform showing your rank, a horn to call for help, manacles, 10 gp',
+    traits: [T('Watcher’s Eye', 'You easily find the local watch, and just as easily spot where criminals gather.')] }),
+  BG('Criminal', 'You have a history of breaking the law and still know the underworld.', ['Deception', 'Stealth'], ['DEX', 'CON', 'INT'], {
+    tools: 'One gaming set, thieves’ tools', languages: 'None',
+    equipment: 'A crowbar, dark common clothes with a hood, 15 gp',
+    traits: [T('Criminal Contact', 'You have a trusted contact in a network of criminals and know how to get messages to them, even over long distances.')] }),
+  BG('Entertainer', 'You thrive in front of an audience.', ['Acrobatics', 'Performance'], ['STR', 'DEX', 'CHA'], {
+    tools: 'Disguise kit, one musical instrument', languages: 'None',
+    equipment: 'A musical instrument, a token from an admirer, a costume, 15 gp',
+    traits: [T('By Popular Demand', 'You can always find a place to perform. While you perform each night, you get free food and lodging, and locals tend to like you.')] }),
+  BG('Far Traveler', 'You come from a land so distant most folk have barely heard of it.', ['Insight', 'Perception'], ['DEX', 'WIS', 'CHA'], {
+    tools: 'One musical instrument or gaming set from your homeland', languages: 'One of your choice',
+    equipment: 'Traveler’s clothes, a musical instrument, rough maps of your homeland, 5 gp' }),
+  BG('Feylost', 'You grew up in the Feywild and came back changed.', ['Deception', 'Survival'], ['DEX', 'WIS', 'CHA'], {
+    tools: 'One musical instrument', languages: 'Elvish, Gnomish, Goblin or Sylvan',
+    equipment: 'A musical instrument, traveler’s clothes, 8 gp',
+    traits: [
+      T('Fey Mark', 'The Feywild left a small mark on you. Roll a d8: swirling eyes, a honey scent, cat whiskers, furry ears, skin that sparkles in moonlight, flowers that bloom or wilt near you, vine hair, or a tail.'),
+      T('Feywild Connection', 'Fey recognize you as one of their own, and friendly ones will help you if you’re lost in the Feywild.'),
+    ] }),
+  BG('Fisher', 'You’ve spent your life on fishing boats and in the shallows.', ['History', 'Survival'], ['STR', 'DEX', 'WIS'], {
+    tools: 'None', languages: 'One of your choice',
+    equipment: 'Fishing tackle, a net, a favorite lure or wading boots, traveler’s clothes, 10 gp',
+    traits: [T('Harvest the Water', 'Advantage on checks with fishing tackle. Near water with sea life, you can catch enough food for yourself and up to ten others each day.')] }),
+  BG('Folk Hero', 'Common folk already see you as their champion.', ['Animal Handling', 'Survival'], ['STR', 'CON', 'WIS'], {
+    tools: 'One artisan’s tools, vehicles (land)', languages: 'None',
+    equipment: 'Artisan’s tools, a shovel, an iron pot, common clothes, 10 gp',
+    traits: [T('Rustic Hospitality', 'Common folk will hide you, rest you and shield you from the law, as long as you aren’t a danger to them.')] }),
+  BG('Giant Foundling', 'You grew up among giants and grew unusually large.', ['Intimidation', 'Survival'], ['STR', 'CON', 'WIS'], {
+    tools: 'None', languages: 'Giant and one other',
+    equipment: 'A backpack, traveler’s clothes, a small stone from home, 10 gp' }),
+  BG('Guild Artisan/Merchant', 'A master of a craft, or a trader, backed by your guild.', ['Insight', 'Persuasion'], ['DEX', 'INT', 'CHA'], {
+    tools: 'One artisan’s tools (merchants: navigator’s tools or a language instead)', languages: 'One of your choice',
+    equipment: 'Artisan’s tools (or a mule and cart), a letter of introduction from your guild, traveler’s clothes, 15 gp',
+    traits: [T('Guild Membership', 'Your guild gives you food and lodging if needed, supports you if you’re accused of a crime, and can open doors to powerful people.')] }),
+  BG('Hermit', 'You lived in seclusion and found something there.', ['Medicine', 'Religion'], ['CON', 'WIS', 'CHA'], {
+    tools: 'Herbalism kit', languages: 'One of your choice',
+    equipment: 'A scroll case of notes, a winter blanket, common clothes, an herbalism kit, 5 gp',
+    traits: [T('Discovery', 'In your seclusion you made a unique discovery: a great truth, a hidden place, or a lost fact. Work out what it is with your DM.')] }),
+  BG('Mercenary', 'You fought for coin and now fight for something more.', ['Athletics', 'Persuasion'], ['STR', 'DEX', 'CON'], {
+    tools: 'One gaming set, vehicles (land)', languages: 'None',
+    equipment: 'Your company’s uniform, a rank insignia, about 30 gp of last wages',
+    traits: [T('Mercenary Life', 'You recognize mercenary companies by their emblems, know who leads and hires them, and can always find mercenary work between adventures.')] }),
+  BG('Noble', 'You carry a title, and your family wields wealth and influence.', ['History', 'Persuasion'], ['STR', 'INT', 'CHA'], {
+    tools: 'One gaming set', languages: 'One of your choice',
+    equipment: 'Fine clothes, a signet ring, a scroll of pedigree, 25 gp',
+    traits: [T('Knight (option)', 'You can be a knight instead: you get retainers, one of them a noble squire, rather than the usual noble privileges.')] }),
+  BG('Outlander', 'You grew up in the wilds, far from towns.', ['Athletics', 'Survival'], ['STR', 'CON', 'WIS'], {
+    tools: 'One musical instrument', languages: 'One of your choice',
+    equipment: 'A staff, a hunting trap, an animal trophy, traveler’s clothes, 10 gp',
+    traits: [T('Wanderer', 'You remember maps and terrain well, and can find food and water for yourself and five others each day if the land has any.')] }),
+  BG('Sailor/Pirate', 'Years at sea, on a merchant ship, a navy vessel or a pirate ship.', ['Athletics', 'Perception'], ['STR', 'DEX', 'WIS'], {
+    tools: 'Navigator’s tools, vehicles (water)', languages: 'None',
+    equipment: 'A club, 50 ft of silk rope, a lucky charm, common clothes, 10 gp',
+    traits: [T('Pirate (option)', 'You learned to survive under a dread pirate captain, and many port towns know your unsavory reputation.')] }),
+  BG('Sage', 'You spent years mastering lore from books and experts.', ['Arcana', 'History'], ['CON', 'INT', 'WIS'], {
+    tools: 'None', languages: 'Two of your choice',
+    equipment: 'Ink, a quill, a small knife, a letter from a dead colleague with an unanswered question, common clothes, 10 gp',
+    traits: [T('Researcher', 'If you don’t know something, you usually know where or from whom to find it out.')] }),
+  BG('Smuggler', 'You moved goods, and sometimes people, past the law.', ['Athletics', 'Deception'], ['STR', 'DEX', 'CHA'], {
+    tools: 'Vehicles (water)', languages: 'None',
+    equipment: 'A fancy leather vest or boots, common clothes, 15 gp',
+    traits: [
+      T('Down Low', 'In many towns, you and your friends can stay free in smugglers’ safe houses and keep your presence secret.'),
+      T('Claim to Fame', 'You have one great smuggling story that sets you apart, and you tell it often.'),
+    ] }),
+  BG('Soldier', 'War has been your life for as long as you remember.', ['Athletics', 'Intimidation'], ['STR', 'DEX', 'CON'], {
+    tools: 'One gaming set, vehicles (land)', languages: 'None',
+    equipment: 'A rank insignia, a trophy from a fallen enemy, common clothes, 10 gp' }),
+  BG('Urchin', 'You grew up alone and poor on the streets, and survived.', ['Sleight of Hand', 'Stealth'], ['DEX', 'WIS', 'CHA'], {
+    tools: 'Disguise kit, thieves’ tools', languages: 'None',
+    equipment: 'A small knife, a map of your home city, a pet mouse, a token of your parents, common clothes, 10 gp',
+    traits: [T('City Secrets', 'Out of combat, you and anyone you lead travel between any two places in a city twice as fast.')] }),
 ];
 
 const ALL_SKILLS = ['Acrobatics', 'Animal Handling', 'Arcana', 'Athletics', 'Deception', 'History', 'Insight', 'Intimidation', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Performance', 'Persuasion', 'Religion', 'Sleight of Hand', 'Stealth', 'Survival'];
 const FINESSE_KIT = ['simple', 'Hand crossbow', 'Longsword', 'Rapier', 'Shortsword'];
 const CASTER_KIT = ['Dagger', 'Dart', 'Sling', 'Quarterstaff', 'Light crossbow'];
 
-const CL = (name, summary, hitDie, saves, skillCount, skillList, weapons, casting, traits) =>
-  ({ name, summary, hitDie, saves, skillCount, skillList, weapons, casting, traits });
+const CL = (name, summary, hitDie, saves, skillCount, skillList, weapons, casting, more) =>
+  ({ name, summary, hitDie, saves, skillCount, skillList, weapons, casting, ...more });
 const CLASSES = [
-  CL('Artificer', 'A magical inventor who infuses gear with power.', 8, ['CON', 'INT'], 2,
-    ['Arcana', 'History', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Sleight of Hand'], ['simple'], 'INT',
-    [T('Magical Tinkering', 'Give a tiny object a small magical effect, like light or a recorded message.'), T('Spellcasting', 'You cast artificer spells using Intelligence.')]),
+  CL('Artificer', 'A magical inventor who channels power through tools.', 8, ['CON', 'INT'], 2,
+    ['Arcana', 'History', 'Investigation', 'Medicine', 'Nature', 'Perception', 'Sleight of Hand'], ['simple'], 'INT', {
+      armor: 'Light, medium, shields', tools: 'Thieves’ tools, tinker’s tools, one artisan’s tools',
+      equipment: 'Any two simple weapons; a light crossbow and 20 bolts; studded leather or scale mail; thieves’ tools and a dungeoneer’s pack (or 55 gp instead)',
+      suggestedWeapons: ['Light crossbow', 'Dagger', 'Light hammer'],
+      traits: [
+        T('Magical Tinkering', 'With tools in hand, touch a tiny object to give it a small effect: light, a recorded 6-second message, a smell or sound, or a picture or short text.'),
+        T('Spellcasting', 'You know two artificer cantrips and cast using Intelligence.'),
+      ] }),
   CL('Barbarian', 'A fierce warrior fueled by rage.', 12, ['STR', 'CON'], 2,
-    ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'], ['simple', 'martial'], '',
-    [T('Rage', 'As a bonus action, rage for a minute: +2 melee damage and half damage from weapons. 2 times per long rest.'), T('Unarmored Defense', 'Without armor, your AC is 10 + Dexterity + Constitution.')]),
-  CL('Bard', 'A magical performer who inspires friends.', 8, ['DEX', 'CHA'], 3, ALL_SKILLS, FINESSE_KIT, 'CHA',
-    [T('Spellcasting', 'You cast bard spells using Charisma.'), T('Bardic Inspiration', 'As a bonus action, give an ally a d6 to add to a roll. Uses equal to your Charisma modifier per long rest.')]),
+    ['Animal Handling', 'Athletics', 'Intimidation', 'Nature', 'Perception', 'Survival'], ['simple', 'martial'], '', {
+      armor: 'Light, medium, shields', tools: 'None',
+      equipment: 'A greataxe or any martial melee weapon; two handaxes or any simple weapon; an explorer’s pack and four javelins',
+      suggestedWeapons: ['Greataxe', 'Handaxe', 'Javelin'],
+      traits: [
+        T('Rage', 'As a bonus action, rage for a minute: advantage on Strength checks and saves, +2 melee damage with Strength, and half damage from weapons. 2 times per long rest. No spells while raging.'),
+        T('Unarmored Defense', 'Without armor, your AC is 10 + Dexterity + Constitution. A shield still works.'),
+      ] }),
+  CL('Bard', 'A magical performer who inspires friends.', 8, ['DEX', 'CHA'], 3, ALL_SKILLS, FINESSE_KIT, 'CHA', {
+    armor: 'Light', tools: 'Three musical instruments',
+    equipment: 'A rapier, longsword or any simple weapon; a diplomat’s or entertainer’s pack; a lute or other instrument; leather armor and a dagger',
+    suggestedWeapons: ['Rapier', 'Longsword', 'Dagger'],
+    traits: [
+      T('Spellcasting', 'You know two bard cantrips and cast using Charisma. You can cast ritual spells and use an instrument as your focus.'),
+      T('Bardic Inspiration', 'As a bonus action, give an ally within 60 ft a d6 to add to one roll in the next 10 minutes. Uses equal to your Charisma modifier (at least 1) per long rest.'),
+    ] }),
   CL('Blood Hunter', 'A monster hunter who fights with their own blood.', 10, ['DEX', 'INT'], 3,
-    ['Acrobatics', 'Arcana', 'Athletics', 'History', 'Insight', 'Investigation', 'Religion', 'Survival'], ['simple', 'martial'], '',
-    [T('Hunter’s Bane', 'Advantage on Survival checks to track fey, fiends and undead, and on Intelligence checks to recall facts about them.'), T('Blood Maledict', 'Spend your own hit points to curse a foe with a blood curse.')]),
+    ['Acrobatics', 'Arcana', 'Athletics', 'History', 'Insight', 'Investigation', 'Religion', 'Survival'], ['simple', 'martial'], '', {
+      armor: 'Light, medium, shields', tools: 'Alchemist’s supplies',
+      equipment: 'A martial weapon or two simple weapons; a light or hand crossbow and 20 bolts; studded leather or scale mail; an explorer’s pack and alchemist’s supplies',
+      suggestedWeapons: ['Longsword', 'Greatsword', 'Light crossbow', 'Hand crossbow'],
+      traits: [
+        T('Hunter’s Bane', 'Advantage on Survival checks to track fey, fiends and undead, and on Intelligence checks about them. Your hemocraft save DC is 8 + proficiency + Intelligence or Wisdom.'),
+        T('Blood Maledict', 'You know one blood curse. Use it once per short or long rest, and you can hurt yourself to make it stronger.'),
+      ] }),
   CL('Cleric', 'A priest who channels divine magic.', 8, ['WIS', 'CHA'], 2,
-    ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'], ['simple'], 'WIS',
-    [T('Spellcasting', 'You cast cleric spells using Wisdom.'), T('Divine Domain', 'Pick a domain from your god. It grants extra spells and powers.')]),
+    ['History', 'Insight', 'Medicine', 'Persuasion', 'Religion'], ['simple'], 'WIS', {
+      armor: 'Light, medium, shields', tools: 'None',
+      equipment: 'A mace (or warhammer if trained); scale mail, leather or chain mail (if trained); a light crossbow and 20 bolts or any simple weapon; a priest’s or explorer’s pack; a shield and a holy symbol',
+      suggestedWeapons: ['Mace', 'Light crossbow', 'Quarterstaff'],
+      traits: [
+        T('Spellcasting', 'You know three cleric cantrips and cast using Wisdom. Each day you prepare spells equal to your Wisdom modifier + 1.'),
+        T('Divine Domain', 'Pick a domain from your god: Arcana, Death, Forge, Grave, Knowledge, Life, Light, Nature, Order, Peace, Tempest, Trickery, Twilight or War.'),
+      ] }),
   CL('Druid', 'A keeper of nature who can later take animal shapes.', 8, ['INT', 'WIS'], 2,
     ['Arcana', 'Animal Handling', 'Insight', 'Medicine', 'Nature', 'Perception', 'Religion', 'Survival'],
-    ['Club', 'Dagger', 'Dart', 'Javelin', 'Mace', 'Quarterstaff', 'Scimitar', 'Sickle', 'Sling', 'Spear'], 'WIS',
-    [T('Druidic', 'You know the secret language of druids.'), T('Spellcasting', 'You cast druid spells using Wisdom.')]),
+    ['Club', 'Dagger', 'Dart', 'Javelin', 'Mace', 'Quarterstaff', 'Scimitar', 'Sickle', 'Sling', 'Spear'], 'WIS', {
+      armor: 'Light, medium, shields (never metal)', tools: 'Herbalism kit',
+      equipment: 'A wooden shield or any simple weapon; a scimitar or any simple melee weapon; leather armor, an explorer’s pack and a druidic focus',
+      suggestedWeapons: ['Scimitar', 'Quarterstaff', 'Club', 'Sling'],
+      traits: [
+        T('Druidic', 'You know the secret language of druids and can leave hidden messages in it.'),
+        T('Spellcasting', 'You know two druid cantrips and cast using Wisdom. You can cast ritual spells and use a druidic focus.'),
+      ] }),
   CL('Fighter', 'A master of weapons and armor.', 10, ['STR', 'CON'], 2,
-    ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'], ['simple', 'martial'], '',
-    [T('Fighting Style', 'Pick a style, like archery (+2 to hit with ranged weapons) or defense (+1 AC in armor).'), T('Second Wind', 'As a bonus action, heal 1d10 + 1 hit points. Once per short or long rest.')]),
+    ['Acrobatics', 'Animal Handling', 'Athletics', 'History', 'Insight', 'Intimidation', 'Perception', 'Survival'], ['simple', 'martial'], '', {
+      armor: 'All armor, shields', tools: 'None',
+      equipment: 'Chain mail, or leather with a longbow and 20 arrows; a martial weapon and shield, or two martial weapons; a light crossbow and 20 bolts, or two handaxes; a dungeoneer’s or explorer’s pack',
+      suggestedWeapons: ['Longsword', 'Greatsword', 'Longbow', 'Light crossbow', 'Handaxe'],
+      traits: [
+        T('Fighting Style', 'Pick one: Archery (+2 to hit with ranged), Defense (+1 AC in armor), Dueling (+2 damage one-handed), Great Weapon Fighting, Protection, Two-Weapon Fighting, Blind Fighting, Interception, Superior Technique, Thrown Weapon Fighting, Unarmed Fighting, Close Quarters Shooter, Mariner or Tunnel Fighter.'),
+        T('Second Wind', 'As a bonus action, heal 1d10 + your fighter level. Once per short or long rest.'),
+      ] }),
   CL('Monk', 'A martial artist who channels inner energy.', 8, ['STR', 'DEX'], 2,
-    ['Acrobatics', 'Athletics', 'History', 'Insight', 'Religion', 'Stealth'], ['simple', 'Shortsword'], '',
-    [T('Unarmored Defense', 'Without armor or a shield, your AC is 10 + Dexterity + Wisdom.'), T('Martial Arts', 'Your unarmed strikes deal 1d4 and can use Dexterity. After attacking, punch again as a bonus action.')]),
+    ['Acrobatics', 'Athletics', 'History', 'Insight', 'Religion', 'Stealth'], ['simple', 'Shortsword'], '', {
+      armor: 'None', tools: 'One artisan’s tools or musical instrument',
+      equipment: 'A shortsword or any simple weapon; a dungeoneer’s or explorer’s pack; 10 darts',
+      suggestedWeapons: ['Shortsword', 'Dart', 'Quarterstaff'],
+      traits: [
+        T('Unarmored Defense', 'Without armor or a shield, your AC is 10 + Dexterity + Wisdom.'),
+        T('Martial Arts', 'Unarmed and with monk weapons, you can use Dexterity and roll a d4 for damage. After attacking, make an unarmed strike as a bonus action.'),
+      ] }),
   CL('Paladin', 'A holy knight bound by an oath.', 10, ['WIS', 'CHA'], 2,
-    ['Athletics', 'Insight', 'Intimidation', 'Medicine', 'Persuasion', 'Religion'], ['simple', 'martial'], '',
-    [T('Divine Sense', 'Sense celestials, fiends and undead nearby.'), T('Lay on Hands', 'You have a pool of 5 hit points of healing to hand out by touch. Refills on a long rest.')]),
+    ['Athletics', 'Insight', 'Intimidation', 'Medicine', 'Persuasion', 'Religion'], ['simple', 'martial'], '', {
+      armor: 'All armor, shields', tools: 'None',
+      equipment: 'A martial weapon and shield, or two martial weapons; five javelins or any simple melee weapon; a priest’s or explorer’s pack; chain mail and a holy symbol',
+      suggestedWeapons: ['Longsword', 'Warhammer', 'Javelin'],
+      traits: [
+        T('Divine Sense', 'As an action, sense any celestial, fiend or undead within 60 ft until the end of your next turn.'),
+        T('Lay on Hands', 'You have a pool of 5 hit points of healing to give by touch. Spend 5 to cure a disease or poison. Refills on a long rest.'),
+        T('Spellcasting', 'Paladins cast using Charisma, starting at 2nd level.'),
+      ] }),
   CL('Ranger', 'A wilderness scout and hunter.', 10, ['STR', 'DEX'], 3,
-    ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'], ['simple', 'martial'], '',
-    [T('Favored Enemy', 'Pick a type of creature. You are better at tracking and remembering facts about them.'), T('Natural Explorer', 'Pick a type of land. You travel and survive there with ease.')]),
+    ['Animal Handling', 'Athletics', 'Insight', 'Investigation', 'Nature', 'Perception', 'Stealth', 'Survival'], ['simple', 'martial'], '', {
+      armor: 'Light, medium, shields', tools: 'None',
+      equipment: 'Scale mail or leather armor; two shortswords or two simple melee weapons; a dungeoneer’s or explorer’s pack; a longbow and 20 arrows',
+      suggestedWeapons: ['Longbow', 'Shortsword'],
+      traits: [
+        T('Favored Enemy', 'Pick a type of creature (or two humanoid races). Advantage on tracking them and recalling facts about them, and you learn one of their languages.'),
+        T('Natural Explorer', 'Pick a favored terrain. There, your group can’t get lost, isn’t slowed by rough ground, and finds double food.'),
+      ] }),
   CL('Rogue', 'A sneaky expert who strikes where it hurts.', 8, ['DEX', 'INT'], 4,
-    ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'], FINESSE_KIT, '',
-    [T('Expertise', 'Pick two of your skills. You add double your proficiency bonus to them.'), T('Sneak Attack', 'Once per turn, deal an extra 1d6 damage when you hit with advantage, or when an ally is next to your target.'), T('Thieves’ Cant', 'You know the secret slang of thieves.')]),
+    ['Acrobatics', 'Athletics', 'Deception', 'Insight', 'Intimidation', 'Investigation', 'Perception', 'Performance', 'Persuasion', 'Sleight of Hand', 'Stealth'], FINESSE_KIT, '', {
+      armor: 'Light', tools: 'Thieves’ tools',
+      equipment: 'A rapier or shortsword; a shortbow and 20 arrows, or a shortsword; a burglar’s, dungeoneer’s or explorer’s pack; leather armor, two daggers and thieves’ tools',
+      suggestedWeapons: ['Rapier', 'Shortsword', 'Shortbow', 'Dagger'],
+      traits: [
+        T('Expertise', 'Pick two of your skills (or one skill and thieves’ tools). You add double your proficiency bonus to them.'),
+        T('Sneak Attack', 'Once per turn, deal an extra 1d6 when you hit with a finesse or ranged weapon and have advantage, or when an ally is next to your target.'),
+        T('Thieves’ Cant', 'You know the secret slang and signs of thieves.'),
+      ] }),
   CL('Sorcerer', 'A spellcaster with magic in their blood.', 6, ['CON', 'CHA'], 2,
-    ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'], CASTER_KIT, 'CHA',
-    [T('Spellcasting', 'You cast sorcerer spells using Charisma.'), T('Sorcerous Origin', 'Pick where your magic comes from, like a dragon ancestor or wild magic.')]),
+    ['Arcana', 'Deception', 'Insight', 'Intimidation', 'Persuasion', 'Religion'], CASTER_KIT, 'CHA', {
+      armor: 'None', tools: 'None',
+      equipment: 'A light crossbow and 20 bolts, or any simple weapon; a component pouch or arcane focus; a dungeoneer’s or explorer’s pack; two daggers',
+      suggestedWeapons: ['Light crossbow', 'Dagger', 'Quarterstaff'],
+      traits: [
+        T('Spellcasting', 'You know four sorcerer cantrips and two 1st-level spells, and cast using Charisma.'),
+        T('Sorcerous Origin', 'Pick where your magic comes from: Aberrant Mind, Clockwork Soul, Draconic Bloodline, Divine Soul, Lunar Sorcery, Shadow Magic, Storm Sorcery or Wild Magic.'),
+      ] }),
   CL('Warlock', 'A spellcaster who made a pact with a powerful being.', 8, ['WIS', 'CHA'], 2,
-    ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'], ['simple'], 'CHA',
-    [T('Otherworldly Patron', 'Pick your patron, like an archfey or a fiend.'), T('Pact Magic', 'You cast warlock spells using Charisma. Your spell slots come back on a short rest.')]),
+    ['Arcana', 'Deception', 'History', 'Intimidation', 'Investigation', 'Nature', 'Religion'], ['simple'], 'CHA', {
+      armor: 'Light', tools: 'None',
+      equipment: 'A light crossbow and 20 bolts, or any simple weapon; a component pouch or arcane focus; a scholar’s or dungeoneer’s pack; leather armor, any simple weapon and two daggers',
+      suggestedWeapons: ['Light crossbow', 'Dagger', 'Quarterstaff'],
+      traits: [
+        T('Otherworldly Patron', 'Pick your patron: Archfey, Celestial, Fathomless, Fiend, Genie, Great Old One, Hexblade, Undead or Undying.'),
+        T('Pact Magic', 'You know two warlock cantrips and cast using Charisma.'),
+      ] }),
   CL('Wizard', 'A scholar of magic with a spellbook.', 6, ['INT', 'WIS'], 2,
-    ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'], CASTER_KIT, 'INT',
-    [T('Spellcasting', 'You cast wizard spells from your spellbook using Intelligence.'), T('Arcane Recovery', 'Once a day after a short rest, get back some spent spell slots.')]),
+    ['Arcana', 'History', 'Insight', 'Investigation', 'Medicine', 'Religion'], CASTER_KIT, 'INT', {
+      armor: 'None', tools: 'None',
+      equipment: 'A quarterstaff or dagger; a component pouch or arcane focus; a scholar’s or explorer’s pack; a spellbook',
+      suggestedWeapons: ['Quarterstaff', 'Dagger'],
+      traits: [
+        T('Spellcasting', 'You know three wizard cantrips and have six 1st-level spells in your spellbook. You cast using Intelligence and can cast rituals from your book.'),
+        T('Spellbook', 'You can copy new wizard spells you find into your book: 2 hours and 50 gp per spell level.'),
+      ] }),
 ];
 
 const base = (kind, e) => ({
@@ -338,11 +497,14 @@ const base = (kind, e) => ({
   skills: [], weapons: [], traits: [], summary: '', ...e,
 });
 
+// Bump when the starting content changes so demo devices pick it up.
+export const SEED_VERSION = 2;
+
 export function seedEntries() {
   return [
     ...RACES.map((e) => base('race', e)),
     ...BACKGROUNDS.map((e) => base('background', e)),
-    ...CLASSES.map((e) => base('class', { ...e, suggestedWeapons: SUGGESTED_WEAPONS[e.name] || [] })),
+    ...CLASSES.map((e) => base('class', { suggestedWeapons: SUGGESTED_WEAPONS[e.name] || [], ...e })),
   ];
 }
 

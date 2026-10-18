@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { firebaseConfig } from './firebaseConfig.js';
-import { demoSeed } from './seed.js';
+import { SEED_VERSION, demoSeed } from './seed.js';
 
 const HubContext = createContext(null);
 export const useHub = () => useContext(HubContext);
@@ -19,7 +19,11 @@ export function HubProvider({ children }) {
   const [user, setUser] = useState(null);
   const [campaignId, setCampaignId] = useState(() => (MODE === 'demo' ? 'demo' : LS.get('hub.campaignId', null)));
   const [campaign, setCampaign] = useState(MODE === 'demo' ? { id: 'demo', name: 'Demo campaign', code: 'DEMO' } : null);
-  const [entries, setEntries] = useState(() => (MODE === 'demo' ? LS.get('hub.demo.entries', null) || demoSeed() : []));
+  const [entries, setEntries] = useState(() => {
+    if (MODE !== 'demo') return [];
+    if (LS.get('hub.demo.seedVersion', 1) !== SEED_VERSION) { LS.set('hub.demo.seedVersion', SEED_VERSION); return demoSeed(); }
+    return LS.get('hub.demo.entries', null) || demoSeed();
+  });
   const [sync, setSync] = useState({ pending: 0, fromCache: false });
   const [online, setOnline] = useState(typeof navigator === 'undefined' ? true : navigator.onLine);
   const [entriesReady, setEntriesReady] = useState(MODE === 'demo');
