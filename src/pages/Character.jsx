@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useHub } from '../lib/store.jsx';
 import { ConfirmButton, Icon, ImagePicker, Nav, Ornament, Picture, useToggle } from '../components/ui.jsx';
-import { ABILITIES, PROF_BONUS, WEAPONS, roll4d6, sign, weaponProficient } from '../lib/rules.js';
+import { ABILITIES, PROF_BONUS, SUGGESTED_WEAPONS, WEAPONS, roll4d6, sign, weaponAbility, weaponProficient, weaponUses } from '../lib/rules.js';
 import { EMPTY_CHARACTER, deriveCharacter, loadCharacter, saveCharacter } from '../lib/character.js';
 import { metaLine } from './Options.jsx';
 
@@ -93,12 +93,13 @@ function StepPick({ kind, c, update, entries }) {
   if (!list.length) return <p className="lede">Your DM hasn&rsquo;t revealed any yet.</p>;
   return list.map((e) => (
     <button key={e.id} type="button" className="pick" aria-pressed={c[field] === e.id} onClick={() => update({ [field]: e.id })}>
-      <span className="grow stack" style={{ gap: 2 }}>
-        <span className="between" style={{ alignItems: 'baseline' }}><span className="card-title" style={{ fontSize: '1.25rem' }}>{e.name}</span><span className="card-meta">{metaLine(e)}</span></span>
-        {e.summary && <span className="small">{e.summary}</span>}
-        {kind !== 'class' && <span className="small" style={{ color: 'var(--accent)', fontWeight: 600 }}>{(e.abilities || []).length === 6 ? 'Bonuses: any ability' : `Bonuses: ${(e.abilities || []).join(', ')}`}</span>}
+      <span className="grow stack" style={{ gap: 3 }}>
+        <span className="pick-title">{e.name}</span>
+        <span className="pick-meta">{metaLine(e)}</span>
+        {e.summary && <span className="pick-meta" style={{ color: 'var(--ink)' }}>{e.summary}</span>}
+        {kind !== 'class' && <span className="pick-meta" style={{ color: 'var(--accent)', fontWeight: 600 }}>{(e.abilities || []).length === 6 ? 'Bonuses: any ability' : `Bonuses: ${(e.abilities || []).join(', ')}`}</span>}
       </span>
-      {c[field] === e.id && <Icon name="check" size={22} style={{ color: 'var(--accent)' }} />}
+      {c[field] === e.id && <Icon name="check" size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
     </button>
   ));
 }
@@ -113,7 +114,7 @@ function StepClass({ c, d, update, entries }) {
   };
   return (
     <>
-      <StepPick kind="class" c={c} update={(p) => update({ ...p, classSkills: [] })} entries={entries} />
+      <StepPick kind="class" c={c} update={(p) => update({ ...p, classSkills: [], weapons: p.classId === c.classId ? c.weapons : [] })} entries={entries} />
       {cls && (
         <div className="soft">
           <h2 className="h2" style={{ fontSize: '1.25rem' }}>Pick {cls.skillCount} {cls.name} skill{cls.skillCount > 1 ? 's' : ''}</h2>
@@ -133,16 +134,18 @@ function StepClass({ c, d, update, entries }) {
 function StepAbilities({ c, d, update }) {
   const filled = c.rolls.every((r) => r !== '' && !Number.isNaN(Number(r)));
   const [typing, setTyping] = useState(!filled);
-  const [picked, setPicked] = useState(null);
+  const [row, setRow] = useState(null);
   const [open, toggle] = useToggle();
   const holder = (i) => Object.keys(c.assign).find((k) => c.assign[k] === i);
   const setRoll = (i, v) => { const rolls = [...c.rolls]; rolls[i] = v === '' ? '' : String(Math.max(0, Math.min(30, Number(v)))); update({ rolls }); };
   const rollAll = () => { update({ rolls: c.rolls.map(() => String(roll4d6())) }); setTyping(false); };
-  const place = (ab) => {
-    if (picked == null) return;
-    const assign = { ...c.assign }; const other = holder(picked); const cur = assign[ab];
-    assign[ab] = picked; if (other && other !== ab) { if (cur == null) delete assign[other]; else assign[other] = cur; }
-    update({ assign }); setPicked(null);
+  const firstEmpty = (assign) => ABILITIES.find((a) => assign[a.id] == null)?.id ?? null;
+  const doneTyping = () => { setTyping(false); setRow(firstEmpty(c.assign)); };
+  const give = (ab, i) => {
+    const assign = { ...c.assign }; const other = holder(i); const cur = assign[ab];
+    assign[ab] = i;
+    if (other && other !== ab) { if (cur == null) delete assign[other]; else assign[other] = cur; }
+    update({ assign }); setRow(firstEmpty(assign));
   };
   const elig = d.eligible;
   const setP2 = (a) => update({ plus2: a, plus1: c.plus1 === a ? '' : c.plus1 });
@@ -151,84 +154,106 @@ function StepAbilities({ c, d, update }) {
     <>
       <section className="card">
         <div className="between">
-          <h2 className="h2" style={{ fontSize: '1.3rem' }}>1. Your rolls</h2>
+          <h2 className="h2" style={{ fontSize: '1.2rem' }}>1. Roll</h2>
           <button type="button" className="btn ghost small" onClick={rollAll}>Roll for me</button>
         </div>
-        <p className="small">Roll 4d6 six times, dropping the lowest die each time. {typing ? 'Type each total in.' : 'Tap a number, then tap an ability below to place it.'}</p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
-          {c.rolls.map((r, i) => typing
-            ? <input key={i} className="roll-in" type="number" inputMode="numeric" aria-label={`Roll ${i + 1}`} value={r} onChange={(e) => setRoll(i, e.target.value)} />
-            : <button key={i} type="button" className={`roll-in${picked === i ? ' on' : ''}`} aria-pressed={picked === i} onClick={() => setPicked(picked === i ? null : i)}
-              style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-              <span>{r}</span><span style={{ fontSize: '0.62rem', fontWeight: 500, letterSpacing: '0.05em' }}>{holder(i) || '—'}</span>
-            </button>)}
-        </div>
-        {typing
-          ? <button type="button" className="btn small" disabled={!filled} onClick={() => setTyping(false)}>Done, now place them</button>
-          : <button type="button" className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setTyping(true)}>Change the numbers</button>}
-      </section>
-
-      <section className="soft">
-        <h2 className="h2" style={{ fontSize: '1.3rem' }}>2. Ability bonuses</h2>
-        <p className="small" style={{ color: 'inherit' }}>
-          {elig.length === 6 ? 'Your race lets these go on any ability.' : `Only abilities your race or background lists can take them. ${d.race?.name}: ${(d.race?.abilities || []).join(', ')}. ${d.bg?.name}: ${(d.bg?.abilities || []).join(', ')}.`}
-        </p>
-        <span className="small" style={{ fontWeight: 600, color: 'inherit' }}>+2 goes to</span>
-        <div className="wrap" style={{ gap: 6 }}>{elig.map((a) => <button key={a} type="button" className="ab-toggle" aria-pressed={c.plus2 === a} onClick={() => setP2(a)}>{a}</button>)}</div>
-        <span className="small" style={{ fontWeight: 600, color: 'inherit' }}>+1 goes to</span>
-        <div className="wrap" style={{ gap: 6 }}>{elig.map((a) => <button key={a} type="button" className="ab-toggle" aria-pressed={c.plus1 === a} disabled={c.plus2 === a} style={c.plus2 === a ? { opacity: 0.4 } : null} onClick={() => update({ plus1: a })}>{a}</button>)}</div>
-      </section>
-
-      <section className="stack" style={{ gap: 6 }}>
-        <h2 className="h2" style={{ fontSize: '1.3rem', marginBottom: 4 }}>3. Your scores</h2>
-        <div className="row small" style={{ gap: 6, padding: '0 4px', fontSize: '0.68rem', letterSpacing: '0.08em', textTransform: 'uppercase', fontWeight: 600 }}>
-          <span className="grow">Ability</span><span style={{ width: 52, textAlign: 'center' }}>Roll</span><span style={{ width: 34, textAlign: 'center' }}>Bonus</span><span style={{ width: 38, textAlign: 'center' }}>Score</span><span style={{ width: 64, textAlign: 'center' }}>Modifier</span>
-        </div>
-        {ABILITIES.map((a) => {
-          const idx = c.assign[a.id]; const base = idx == null ? null : c.rolls[idx];
-          const bonus = d.bonusOf[a.id]; const score = d.scores[a.id]; const m = d.mods[a.id];
-          return (
-            <div key={a.id} className="stack" style={{ gap: 4 }}>
-              <div className="score-row">
-                <span className="grow stack" style={{ gap: 0, paddingLeft: 6 }}><b style={{ fontSize: '0.9rem' }}>{a.id}</b><span className="small" style={{ fontSize: '0.7rem' }}>{a.name}</span></span>
-                <button type="button" className={`slot${picked != null ? ' armed' : ''}`} aria-label={`Place roll on ${a.name}`} onClick={() => place(a.id)}>{base ?? '–'}</button>
-                <span style={{ width: 34, textAlign: 'center', fontWeight: 600, color: 'var(--accent)', fontSize: '0.85rem' }}>{bonus ? `+${bonus}` : ''}</span>
-                <span style={{ width: 38, textAlign: 'center', fontWeight: 600, fontSize: '1.1rem' }}>{score ?? ''}</span>
-                <button type="button" className="modbtn" disabled={score == null} aria-expanded={open === a.id} aria-label={`${a.name} modifier, explain`} onClick={() => toggle(a.id)}>
-                  <b style={{ fontSize: '1.05rem' }}>{score == null ? '' : sign(m)}</b><Icon name="help" size={13} style={{ color: 'var(--warn)' }} />
-                </button>
-              </div>
-              {open === a.id && score != null && <p className="why" style={{ margin: '0 4px 4px' }}>{bonus ? `${base} + ${bonus} bonus = ${score}. ` : ''}Your modifier is the score minus 10, halved and rounded down: {score} gives {sign(m)}. You add it to {a.name} rolls.</p>}
+        {typing ? (
+          <>
+            <p className="small">Roll 4d6 six times. Drop the lowest die each time and type each total in.</p>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6 }}>
+              {c.rolls.map((r, i) => <input key={i} className="roll-in" type="number" inputMode="numeric" aria-label={`Roll ${i + 1}`} value={r} onChange={(e) => setRoll(i, e.target.value)} />)}
             </div>
-          );
-        })}
+            <button type="button" className="btn small" disabled={!filled} onClick={doneTyping}>Done</button>
+          </>
+        ) : (
+          <div className="between">
+            <span style={{ fontSize: '1.1rem', fontWeight: 600, letterSpacing: '0.04em' }}>{c.rolls.join('  ')}</span>
+            <button type="button" className="link-btn" onClick={() => setTyping(true)}>Change</button>
+          </div>
+        )}
       </section>
+
+      {!typing && (
+        <section className="stack" style={{ gap: 6 }}>
+          <h2 className="h2" style={{ fontSize: '1.2rem' }}>2. Place your numbers</h2>
+          <p className="small">Tap an ability&rsquo;s box, then pick its number.</p>
+          {ABILITIES.map((a) => {
+            const idx = c.assign[a.id]; const base = idx == null ? null : c.rolls[idx];
+            const bonus = d.bonusOf[a.id]; const score = d.scores[a.id]; const m = d.mods[a.id];
+            const isOpen = row === a.id;
+            return (
+              <div key={a.id} className="stack" style={{ gap: 4 }}>
+                <div className="score-row" style={isOpen ? { borderColor: 'var(--accent)' } : null}>
+                  <span className="grow stack" style={{ gap: 0, paddingLeft: 6 }}><b style={{ fontSize: '0.9rem' }}>{a.id}</b><span className="small" style={{ fontSize: '0.7rem' }}>{a.name}</span></span>
+                  <button type="button" className={`slot${isOpen ? ' armed' : ''}`} aria-expanded={isOpen} aria-label={`Choose a number for ${a.name}`} onClick={() => setRow(isOpen ? null : a.id)}>{base ?? '–'}</button>
+                  <span style={{ width: 30, textAlign: 'center', fontWeight: 600, color: 'var(--accent)', fontSize: '0.85rem' }}>{bonus ? `+${bonus}` : ''}</span>
+                  <span style={{ width: 34, textAlign: 'center', fontWeight: 600, fontSize: '1.1rem' }}>{score ?? ''}</span>
+                  <button type="button" className="modbtn" disabled={score == null} aria-expanded={open === a.id} aria-label={`${a.name} modifier, explain`} onClick={() => toggle(a.id)}>
+                    <b style={{ fontSize: '1.05rem' }}>{score == null ? '' : sign(m)}</b><Icon name="help" size={13} style={{ color: 'var(--warn)' }} />
+                  </button>
+                </div>
+                {isOpen && (
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(6, minmax(0, 1fr))', gap: 6, padding: '2px 4px 6px' }}>
+                    {c.rolls.map((r, i) => {
+                      const who = holder(i);
+                      return (
+                        <button key={i} type="button" className={`roll-in${who === a.id ? ' on' : ''}`} aria-pressed={who === a.id} onClick={() => give(a.id, i)}
+                          style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: 50, opacity: who && who !== a.id ? 0.55 : 1 }}>
+                          <span>{r}</span><span style={{ fontSize: '0.6rem', fontWeight: 500 }}>{who && who !== a.id ? who : ' '}</span>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+                {open === a.id && score != null && <p className="why" style={{ margin: '0 4px 4px' }}>{bonus ? `${base} + ${bonus} bonus = ${score}. ` : ''}Your modifier is the score minus 10, halved and rounded down: {score} gives {sign(m)}. At this table it never goes below +0. You add it to {a.name} rolls.</p>}
+              </div>
+            );
+          })}
+        </section>
+      )}
+
+      {!typing && (
+        <section className="soft">
+          <h2 className="h2" style={{ fontSize: '1.2rem' }}>3. Ability bonuses</h2>
+          <p className="small" style={{ color: 'inherit' }}>
+            {elig.length === 6 ? 'Your race lets these go on any ability.' : `Only abilities your race or background lists can take them. ${d.race?.name}: ${(d.race?.abilities || []).join(', ')}. ${d.bg?.name}: ${(d.bg?.abilities || []).join(', ')}.`}
+          </p>
+          <span className="small" style={{ fontWeight: 600, color: 'inherit' }}>+2 goes to</span>
+          <div className="wrap" style={{ gap: 6 }}>{elig.map((a) => <button key={a} type="button" className="ab-toggle" aria-pressed={c.plus2 === a} onClick={() => setP2(a)}>{a}</button>)}</div>
+          <span className="small" style={{ fontWeight: 600, color: 'inherit' }}>+1 goes to</span>
+          <div className="wrap" style={{ gap: 6 }}>{elig.map((a) => <button key={a} type="button" className="ab-toggle" aria-pressed={c.plus1 === a} disabled={c.plus2 === a} style={c.plus2 === a ? { opacity: 0.4 } : null} onClick={() => update({ plus1: a })}>{a}</button>)}</div>
+        </section>
+      )}
     </>
   );
 }
 
 function StepWeapons({ c, d, update }) {
   const trained = WEAPONS.filter((w) => weaponProficient(w, d.weaponProfs));
-  const other = WEAPONS.filter((w) => !weaponProficient(w, d.weaponProfs));
-  const [showOther, setShowOther] = useState(false);
+  const usual = new Set(d.cls?.suggestedWeapons || SUGGESTED_WEAPONS[d.cls?.name] || []);
+  const common = trained.filter((w) => usual.has(w.name));
+  const rest = trained.filter((w) => !usual.has(w.name));
+  const raceAdds = (d.race?.weapons || []).length > 0;
   const toggle = (n) => update({ weapons: c.weapons.includes(n) ? c.weapons.filter((x) => x !== n) : c.weapons.length < 3 ? [...c.weapons, n] : c.weapons });
-  const Row = (w) => (
-    <button key={w.name} type="button" className="pick" style={{ minHeight: 52 }} aria-pressed={c.weapons.includes(w.name)} onClick={() => toggle(w.name)}
-      disabled={!c.weapons.includes(w.name) && c.weapons.length >= 3}>
-      <span className="grow stack" style={{ gap: 1 }}>
-        <span style={{ fontWeight: 600 }}>{w.name}</span>
-        <span className="small">{w.die} {w.type}{w.finesse ? ' · finesse' : ''}{w.ranged ? ` · range ${w.ranged}` : ''}{w.thrown ? ' · can throw' : ''}</span>
-      </span>
-      {c.weapons.includes(w.name) && <Icon name="check" size={22} style={{ color: 'var(--accent)' }} />}
-    </button>
-  );
+  const Row = (w) => {
+    const ab = weaponAbility(w, d.mods);
+    return (
+      <button key={w.name} type="button" className="pick" style={{ minHeight: 56 }} aria-pressed={c.weapons.includes(w.name)} onClick={() => toggle(w.name)}
+        disabled={!c.weapons.includes(w.name) && c.weapons.length >= 3}>
+        <span className="grow stack" style={{ gap: 2 }}>
+          <span style={{ fontWeight: 600 }}>{w.name}</span>
+          <span className="pick-meta">Damage {w.die} {w.type}{w.versatile ? ` (${w.versatile} with two hands)` : ''}</span>
+          <span className="pick-meta">Uses {weaponUses(w)}{w.finesse ? `, whichever is higher (${ab} ${sign(d.mods[ab])})` : ` (${sign(d.mods[ab])})`}{w.ranged ? ` · range ${w.ranged}` : w.thrown ? ` · can throw ${w.thrown}` : ''}</span>
+        </span>
+        {c.weapons.includes(w.name) && <Icon name="check" size={22} style={{ color: 'var(--accent)', flexShrink: 0 }} />}
+      </button>
+    );
+  };
   return (
     <>
-      <p className="lede">Pick up to 3 weapons your character carries ({c.weapons.length} picked). Check your starting gear with your DM. You can skip this.</p>
-      <span className="label">You&rsquo;re trained with these</span>
-      {trained.map(Row)}
-      <button type="button" className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => setShowOther(!showOther)}>{showOther ? 'Hide other weapons' : 'Show other weapons (no proficiency bonus)'}</button>
-      {showOther && other.map(Row)}
+      <p className="lede">Your class decides which weapons you&rsquo;re trained with{raceAdds ? `, plus a few from being ${/^[aeiou]/i.test(d.race.name) ? 'an' : 'a'} ${d.race.name}` : ''}. Pick up to 3 ({c.weapons.length} picked). Check your starting gear with your DM.</p>
+      {common.length > 0 && <><span className="label">Usual for a {d.cls?.name}</span>{common.map(Row)}</>}
+      {rest.length > 0 && <><span className="label" style={{ marginTop: 6 }}>{common.length ? 'Also trained' : 'Trained with'}</span>{rest.map(Row)}</>}
     </>
   );
 }

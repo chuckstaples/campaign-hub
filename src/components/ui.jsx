@@ -105,19 +105,27 @@ export function Switch({ on, onChange, label }) {
 }
 
 export function Picture({ src, alt, height = 200, label = 'No picture yet', className = 'picture', style }) {
-  const [broken, setBroken] = useState(false);
+  const [broken, setBroken] = useState(null);
+  const isBroken = src && broken === src;
+  const big = height > 80;
   return (
     <div className={className} style={{ height, ...style }}>
-      {src && !broken
-        ? <img src={src} alt={alt} onError={() => setBroken(true)} />
-        : <div className="stack" style={{ alignItems: 'center', gap: 6, fontSize: '0.8rem', textAlign: 'center', padding: 8 }}><Icon name="image" size={height > 80 ? 28 : 18} />{height > 80 && <span>{broken ? 'Picture couldn’t load' : label}</span>}</div>}
+      {src && !isBroken
+        ? <img src={src} alt={alt} onError={() => setBroken(src)} />
+        : <div className="stack" style={{ alignItems: 'center', gap: 6, fontSize: '0.8rem', textAlign: 'center', padding: 10, lineHeight: 1.4 }}>
+            <Icon name="image" size={big ? 28 : 18} />
+            {big && <span>{isBroken ? 'That link didn\u2019t give a picture. Try saving the image to your phone and uploading it.' : label}</span>}
+          </div>}
     </div>
   );
 }
 
-// Paste an image address (e.g. from Pinterest) or upload a photo.
+// Upload a photo (most reliable) or paste an image address (e.g. from Pinterest).
 export function ImagePicker({ value, onChange }) {
+  const { mode } = useHub();
   const [open, setOpen] = useState(false);
+  const [link, setLink] = useState(value && !value.startsWith('data:') ? value : '');
+  const isPinPage = /pinterest\.[a-z.]+\/pin\//i.test(link) || /pin\.it\//i.test(link);
   const onFile = (file) => {
     if (!file) return;
     const img = new Image();
@@ -127,26 +135,29 @@ export function ImagePicker({ value, onChange }) {
       const canvas = document.createElement('canvas');
       canvas.width = Math.round(img.width * scale); canvas.height = Math.round(img.height * scale);
       canvas.getContext('2d').drawImage(img, 0, 0, canvas.width, canvas.height);
-      onChange(canvas.toDataURL('image/jpeg', 0.82));
+      onChange(canvas.toDataURL('image/jpeg', 0.82)); setLink('');
       URL.revokeObjectURL(url);
     };
     img.src = url;
   };
+  const setFromLink = (v) => { setLink(v); const t = v.trim(); onChange(/pinterest\.[a-z.]+\/pin\/|pin\.it\//i.test(t) ? '' : t); };
   return (
     <div className="stack">
-      <label className="field">
-        <span>Picture link</span>
-        <input className="input" type="url" inputMode="url" placeholder="Paste an image address" value={value?.startsWith('data:') ? '' : value || ''} onChange={(e) => onChange(e.target.value.trim())} />
-      </label>
-      <div className="between">
-        <label className="btn ghost small" style={{ cursor: 'pointer' }}>
-          Upload a photo
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <label className="btn small" style={{ cursor: 'pointer' }}>
+          <Icon name="image" size={16} />{value ? 'Change photo' : 'Upload a photo'}
           <input type="file" accept="image/*" className="sr" onChange={(e) => onFile(e.target.files?.[0])} />
         </label>
         <button type="button" className="help" aria-expanded={open} aria-label="How to use a Pinterest picture" onClick={() => setOpen(!open)}><Icon name="help" size={19} /></button>
       </div>
-      {open && <p className="why">On Pinterest, open the pin, press and hold the picture, and choose <b>Copy Image Address</b> (or <b>Copy Image</b> on iPhone, then save and upload it). Paste the address above. A regular pin link won&rsquo;t show a picture.</p>}
-      {value && <button type="button" className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => onChange('')}>Remove picture</button>}
+      {open && <p className="why">Easiest way: on Pinterest, press and hold the picture, save it to your phone, then tap Upload a photo. You can also copy the <b>image address</b> and paste it below.</p>}
+      <label className="field">
+        <span>Or paste an image address</span>
+        <input className="input" type="url" inputMode="url" placeholder="https://i.pinimg.com/..." value={link} onChange={(e) => setFromLink(e.target.value)} />
+      </label>
+      {isPinPage && <p className="why">That&rsquo;s a link to the pin&rsquo;s page, not the picture itself. Save the picture and upload it instead.</p>}
+      {mode === 'demo' && link && !isPinPage && <p className="small">In this preview, only uploaded photos can show. Links will work in the finished app.</p>}
+      {value && <button type="button" className="link-btn" style={{ alignSelf: 'flex-start' }} onClick={() => { onChange(''); setLink(''); }}>Remove picture</button>}
     </div>
   );
 }

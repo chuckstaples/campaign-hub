@@ -58,20 +58,28 @@ describe('Campaign Hub (demo mode)', () => {
     click(btn('Next: Ability scores'));
 
     [15, 14, 13, 12, 10, 8].forEach((v, i) => fireEvent.change(screen.getByLabelText(`Roll ${i + 1}`), { target: { value: String(v) } }));
-    click(btn('Done, now place them'));
-    const order = { Dexterity: 0, Wisdom: 1, Constitution: 2, Charisma: 3, Intelligence: 4, Strength: 5 };
-    for (const [ab, i] of Object.entries(order)) {
-      const chip = screen.getAllByRole('button', { pressed: false }).find((b) => b.classList.contains('roll-in') && b.textContent.startsWith(String([15, 14, 13, 12, 10, 8][i])));
+    click(btn('Done'));
+    const order = { Dexterity: 15, Wisdom: 14, Constitution: 13, Charisma: 12, Intelligence: 10, Strength: 8 };
+    for (const [ab, v] of Object.entries(order)) {
+      const slot = btn(`Choose a number for ${ab}`);
+      if (slot.getAttribute('aria-expanded') !== 'true') click(slot);
+      const chip = screen.getAllByRole('button').find((b) => b.classList.contains('roll-in') && b.firstChild.textContent === String(v));
       click(chip);
-      click(btn(`Place roll on ${ab}`));
     }
+    expect(btn('Choose a number for Strength').textContent).toBe('8');
+    click(btn('Strength modifier, explain'));
+    expect(screen.getByText(/8 gives \+0\. At this table it never goes below \+0/)).toBeTruthy();
     const plusRows = screen.getAllByText(/goes to/);
     click(within(plusRows[0].nextElementSibling).getByRole('button', { name: 'DEX' }));
     click(within(plusRows[1].nextElementSibling).getByRole('button', { name: 'CON' }));
     click(btn('Dexterity modifier, explain'));
     expect(screen.getByText(/15 \+ 2 bonus = 17/)).toBeTruthy();
     click(btn('Next: Weapons'));
-    click(screen.getByText('Shortsword').closest('button'));
+    expect(screen.getByText('Usual for a Rogue')).toBeTruthy();
+    expect(screen.queryByText('Greataxe')).toBeNull();
+    const sword = screen.getByText('Shortsword').closest('button');
+    expect(within(sword).getByText(/Uses Strength or Dexterity, whichever is higher \(DEX \+3\)/)).toBeTruthy();
+    click(sword);
     click(btn('Next: Review'));
     expect(screen.getByRole('button', { name: /HP/ }).textContent).toContain('10'); // HP: d8 + Con +2
     click(btn('Save character'));

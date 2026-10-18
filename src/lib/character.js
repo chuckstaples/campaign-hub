@@ -1,4 +1,4 @@
-import { ABILITIES, ABILITY_NAME, SKILLS, WEAPON_BY_NAME, PROF_BONUS, mod, sign, plus, parseDie, weaponProficient } from './rules.js';
+import { ABILITIES, ABILITY_NAME, SKILLS, WEAPON_BY_NAME, PROF_BONUS, mod, sign, plus, parseDie, weaponProficient, weaponAbility } from './rules.js';
 
 export const EMPTY_CHARACTER = {
   name: '', image: '', raceId: '', backgroundId: '', classId: '', classSkills: [],
@@ -54,8 +54,7 @@ export function deriveCharacter(c, byId) {
   // Weapons
   for (const wName of c.weapons) {
     const w = WEAPON_BY_NAME[wName]; if (!w) continue;
-    const useDex = w.ranged || (w.finesse && mods.DEX >= mods.STR);
-    const ab = useDex ? 'DEX' : 'STR';
+    const ab = weaponAbility(w, mods);
     const prof = weaponProficient(w, weaponProfs);
     const hit = mods[ab] + (prof ? P : 0);
     const d = parseDie(w.die);

@@ -2,6 +2,8 @@
 // Trait text is shortened for phones. Everything here is editable in DM mode.
 // Ability lists: the abilities a race or background allows the +2/+1 to go on.
 
+import { SUGGESTED_WEAPONS } from './rules.js';
+
 const T = (name, text) => ({ name, text });
 const slug = (s) => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
 
@@ -340,7 +342,7 @@ export function seedEntries() {
   return [
     ...RACES.map((e) => base('race', e)),
     ...BACKGROUNDS.map((e) => base('background', e)),
-    ...CLASSES.map((e) => base('class', e)),
+    ...CLASSES.map((e) => base('class', { ...e, suggestedWeapons: SUGGESTED_WEAPONS[e.name] || [] })),
   ];
 }
 

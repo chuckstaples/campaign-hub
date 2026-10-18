@@ -94,6 +94,9 @@ export default function DMEdit() {
             <input className="input" placeholder="Plus specific weapons, comma separated" value={specificWeapons.join(', ')}
               onChange={(x) => up({ weapons: [...(e.weapons || []).filter((w) => w === 'simple' || w === 'martial'), ...x.target.value.split(',').map((s) => s.trim()).filter(Boolean)] })} />
           </div>
+          <Field label="Usual weapons (shown first to players)" hint="Comma separated, e.g. Quarterstaff, Dagger">
+            <input className="input" value={(e.suggestedWeapons || []).join(', ')} onChange={(x) => up({ suggestedWeapons: x.target.value.split(',').map((s) => s.trim()).filter(Boolean) })} />
+          </Field>
         </>}
 
         <div className="stack">

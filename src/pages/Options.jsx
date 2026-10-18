@@ -81,9 +81,9 @@ export default function Options() {
       <div className="page" style={{ paddingTop: '0.4rem', gap: '0.75rem' }}>
         {list.map((e) => (
           <Link key={e.id} to={`/entry/${e.id}`} className="card">
-            <div className="between" style={{ alignItems: 'baseline' }}>
+            <div className="stack" style={{ gap: 2 }}>
               <span className="card-title">{e.name}</span>
-              <span className="card-meta" style={{ textAlign: 'right' }}>{metaLine(e)}</span>
+              <span className="card-meta">{metaLine(e)}</span>
             </div>
             {e.summary && <span className="card-body">{e.summary}</span>}
             <div className="wrap" style={{ marginTop: 2 }}>{chips(e).map((c) => <span key={c} className="tag">{c}</span>)}</div>

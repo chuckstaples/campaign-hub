@@ -72,7 +72,43 @@ export const WEAPON_BY_NAME = Object.fromEntries(WEAPONS.map((w) => [w.name, w])
 
 export const PROF_BONUS = 2; // level 1
 
-export const mod = (score) => Math.floor((score - 10) / 2);
+// Table rule: modifiers never go below +0 (official rules allow negatives).
+export const NO_NEGATIVE_MODS = true;
+export const mod = (score) => {
+  const m = Math.floor((score - 10) / 2);
+  return NO_NEGATIVE_MODS ? Math.max(0, m) : m;
+};
+
+// What each class usually carries. Players pick from weapons their class
+// (and race) trains them with; these show first as the usual choices.
+export const SUGGESTED_WEAPONS = {
+  Artificer: ['Light crossbow', 'Light hammer', 'Dagger'],
+  Barbarian: ['Greataxe', 'Handaxe', 'Javelin'],
+  Bard: ['Rapier', 'Dagger', 'Longsword'],
+  'Blood Hunter': ['Longsword', 'Greatsword', 'Hand crossbow'],
+  Cleric: ['Mace', 'Light crossbow', 'Quarterstaff'],
+  Druid: ['Quarterstaff', 'Scimitar', 'Sling'],
+  Fighter: ['Longsword', 'Greatsword', 'Longbow', 'Handaxe'],
+  Monk: ['Shortsword', 'Quarterstaff', 'Dart'],
+  Paladin: ['Longsword', 'Warhammer', 'Javelin'],
+  Ranger: ['Longbow', 'Shortsword', 'Scimitar'],
+  Rogue: ['Shortsword', 'Dagger', 'Shortbow', 'Rapier'],
+  Sorcerer: ['Quarterstaff', 'Dagger', 'Light crossbow'],
+  Warlock: ['Light crossbow', 'Dagger', 'Quarterstaff'],
+  Wizard: ['Quarterstaff', 'Dagger'],
+};
+
+// Which ability a weapon uses, given the character's modifiers.
+export function weaponAbility(w, mods) {
+  if (w.ranged) return 'DEX';
+  if (w.finesse) return mods.DEX >= mods.STR ? 'DEX' : 'STR';
+  return 'STR';
+}
+export function weaponUses(w) {
+  if (w.ranged) return 'Dexterity';
+  if (w.finesse) return 'Strength or Dexterity';
+  return 'Strength';
+}
 export const sign = (n) => (n >= 0 ? `+${n}` : `−${Math.abs(n)}`);
 // "d20 + 5", "d20 − 1", "d20"
 export const plus = (n) => (n === 0 ? '' : n > 0 ? ` + ${n}` : ` − ${Math.abs(n)}`);
