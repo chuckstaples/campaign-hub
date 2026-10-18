@@ -111,6 +111,10 @@ export function HubProvider({ children }) {
       signIn: () => fb?.signIn(), signOut: () => fb?.signOut(),
       myCampaigns: () => (fb && user ? fb.myCampaigns(user.uid) : Promise.resolve([])),
       createCampaign: (name) => fb.createCampaign(name, user.uid),
+      deleteCampaign: async (cid) => {
+        await fb.deleteCampaign(cid);
+        if (cid === campaignId) { LS.del('hub.campaignId'); setCampaignId(null); setEntries([]); }
+      },
     };
   }, [entries, authReady, fb, entriesReady, error, user, isOwner, campaign, campaignId, online, sync, join, leave, openCampaign, saveEntry, setVisible, deleteEntry, resetDemo]);
 

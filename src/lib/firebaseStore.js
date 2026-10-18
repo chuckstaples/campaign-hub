@@ -64,6 +64,22 @@ export function createFirebaseStore(config) {
       return ref.id;
     },
 
+    // Delete a campaign the signed-in DM owns: entries first (the rules check
+    // ownership through the campaign), then the join code, then the campaign.
+    async deleteCampaign(cid) {
+      const camp = await getDoc(doc(db, 'campaigns', cid));
+      if (!camp.exists()) return;
+      const entries = await getDocs(entriesCol(cid));
+      for (let i = 0; i < entries.docs.length; i += 400) {
+        const batch = writeBatch(db);
+        entries.docs.slice(i, i + 400).forEach((d) => batch.delete(d.ref));
+        await batch.commit();
+      }
+      const code = camp.data().code;
+      if (code) await deleteDoc(doc(db, 'codes', code));
+      await deleteDoc(doc(db, 'campaigns', cid));
+    },
+
     // cb(entries, {pending, fromCache}); players only receive revealed entries.
     watchEntries(cid, { includeHidden }, cb, onError) {
       const q = includeHidden ? entriesCol(cid) : query(entriesCol(cid), where('visible', '==', true));

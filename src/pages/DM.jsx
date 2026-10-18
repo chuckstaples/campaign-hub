@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useHub } from '../lib/store.jsx';
-import { BackLink, Icon, Ornament, Switch, SyncStatus } from '../components/ui.jsx';
+import { BackLink, ConfirmButton, Icon, Ornament, Switch, SyncStatus } from '../components/ui.jsx';
 import { KINDS } from './Options.jsx';
 
 export default function DM() {
@@ -30,7 +30,7 @@ function SignIn() {
 }
 
 function PickCampaign() {
-  const { myCampaigns, openCampaign, createCampaign, user, signOut, campaign } = useHub();
+  const { myCampaigns, openCampaign, createCampaign, deleteCampaign, user, signOut, campaign } = useHub();
   const [list, setList] = useState(null);
   const [name, setName] = useState('');
   const [busy, setBusy] = useState(false);
@@ -53,10 +53,16 @@ function PickCampaign() {
         {campaign && <p className="why">This phone is joined to &ldquo;{campaign.name}&rdquo;, which belongs to a different account.</p>}
         {list === null && <p className="lede">Loading…</p>}
         {list?.map((c) => (
-          <button key={c.id} type="button" className="pick" onClick={() => openCampaign(c.id)}>
-            <span className="grow stack" style={{ gap: 2 }}><span className="card-title" style={{ fontSize: '1.3rem' }}>{c.name}</span><span className="small">Code {c.code}</span></span>
-            <Icon name="back" style={{ transform: 'rotate(180deg)', color: 'var(--muted)' }} />
-          </button>
+          <div key={c.id} className="stack" style={{ gap: 6 }}>
+            <button type="button" className="pick" onClick={() => openCampaign(c.id)}>
+              <span className="grow stack" style={{ gap: 2 }}><span className="card-title" style={{ fontSize: '1.3rem' }}>{c.name}</span><span className="small">Code {c.code}</span></span>
+              <Icon name="back" style={{ transform: 'rotate(180deg)', color: 'var(--muted)' }} />
+            </button>
+            <ConfirmButton className="link-btn" style={{ alignSelf: 'flex-end', minHeight: 36 }} confirmText="Tap again to delete it for good"
+              onConfirm={() => deleteCampaign(c.id).then(() => setList(list.filter((x) => x.id !== c.id))).catch(() => setErr('Couldn\u2019t delete it. Check your internet and try again.'))}>
+              Delete {c.name}
+            </ConfirmButton>
+          </div>
         ))}
         <form className="card" onSubmit={create}>
           <h2 className="h2" style={{ fontSize: '1.3rem' }}>Start a new campaign</h2>
@@ -72,7 +78,8 @@ function PickCampaign() {
 }
 
 function Manage() {
-  const { entries, campaign, setVisible, mode, signOut, user } = useHub();
+  const { entries, campaign, setVisible, mode, signOut, user, deleteCampaign } = useHub();
+  const [delErr, setDelErr] = useState('');
   const nav = useNavigate();
   const [kind, setKind] = useState(() => sessionStorage.getItem('hub.dmtab') || 'race');
   const [q, setQ] = useState('');
@@ -134,6 +141,16 @@ function Manage() {
         ))}
         {list.length === 0 && <p className="lede" style={{ textAlign: 'center', padding: '1.5rem 0' }}>Nothing here yet.</p>}
         <Ornament />
+        {mode === 'firebase' && campaign && (
+          <div className="card dashed" style={{ alignItems: 'center', textAlign: 'center' }}>
+            <span className="small">Deleting removes this campaign and everything in it for every player. It can&rsquo;t be undone.</span>
+            {delErr && <p className="why" role="alert">{delErr}</p>}
+            <ConfirmButton className="btn danger small" confirmText="Tap again to delete for good"
+              onConfirm={() => deleteCampaign(campaign.id).then(() => nav('/dm')).catch(() => setDelErr('Couldn\u2019t delete it. Check your internet and try again.'))}>
+              Delete this campaign
+            </ConfirmButton>
+          </div>
+        )}
         {mode === 'firebase' && <p className="small" style={{ textAlign: 'center' }}>Signed in as {user?.email} · <button type="button" className="link-btn" style={{ minHeight: 0 }} onClick={signOut}>Sign out</button></p>}
       </div>
       <div className="footer" style={{ alignItems: 'center' }}><SyncStatus /></div>
