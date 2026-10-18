@@ -1,5 +1,8 @@
 // End-to-end walkthrough of the demo build: browse, filter, DM reveal, make a character, check rolls.
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, vi } from 'vitest';
+
+// Run the walkthrough in demo mode (no Firebase).
+vi.mock('./lib/firebaseConfig.js', () => ({ firebaseConfig: null }));
 import { render, screen, within, fireEvent, act } from '@testing-library/react';
 import { HubProvider } from './lib/store.jsx';
 import App from './App.jsx';
